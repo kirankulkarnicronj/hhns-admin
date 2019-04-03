@@ -1,11 +1,12 @@
 import React from 'react'
 import { Editor } from 'react-draft-wysiwyg'
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css'
-import { Form, Input, Button, Radio, Select, Upload, Icon } from 'antd'
+import { Form, Input, Button, Select, Upload, Icon } from 'antd'
 import styles from '../style.module.scss'
 
+const { Option } = Select
+
 const FormItem = Form.Item
-const RadioGroup = Radio.Group
 const { Dragger } = Upload
 
 @Form.create()
@@ -21,34 +22,32 @@ class AddForm extends React.Component {
           </FormItem>
         </div>
         <div className="form-group">
-          <FormItem label="Type">
-            {form.getFieldDecorator('type')(
-              <RadioGroup>
-                <Radio value="text">Text</Radio>
-                <Radio value="video">Video</Radio>
-                <Radio value="image">Image</Radio>
-                <Radio value="audio">Audio</Radio>
-                <Radio value="vimeo">Vimeo</Radio>
-              </RadioGroup>,
-            )}
+          <FormItem label="Tags">
+            {form.getFieldDecorator('title')(<Input placeholder="Tags" />)}
           </FormItem>
         </div>
         <div className="form-group">
-          <FormItem label="Category">
-            {form.getFieldDecorator('category', {
-              initialValue: ['travel', 'lifestyle'],
-            })(
+          <FormItem label="Language">
+            {form.getFieldDecorator('colors')(
               <Select
-                mode="tags"
-                size="default"
-                placeholder="Select post category"
+                id="product-edit-colors"
+                showSearch
                 style={{ width: '100%' }}
-              />,
+                placeholder="Select a color"
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+              >
+                <Option value="blue">English</Option>
+                <Option value="red">Russian</Option>
+              </Select>,
             )}
           </FormItem>
         </div>
+
         <div className="form-group">
-          <FormItem label="Content">
+          <FormItem label="Body">
             {form.getFieldDecorator('content')(
               <div className={styles.editor}>
                 <Editor />
