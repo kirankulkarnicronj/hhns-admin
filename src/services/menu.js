@@ -247,6 +247,11 @@ export async function getLeftMenuData() {
           url: '/blog/add-blog-post',
           pro: true,
         },
+        {
+          title: 'List',
+          key: 'blogList',
+          url: '/blog/blog-list',
+        },
       ],
     },
     {

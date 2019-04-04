@@ -3,6 +3,7 @@ import types from './action'
 const initialState = {
   loading: false,
   blogs: [],
+  totalBlogs: '',
   isBlogCreated: false,
   error: '',
 }

@@ -226,6 +226,11 @@ const routes = [
     component: loadable(() => import('pages/blog/add-blog-post')),
     exact: true,
   },
+  {
+    path: '/blog/blog-list',
+    component: loadable(() => import('pages/blog/list')),
+    exact: true,
+  },
 
   // YouTube
   {
