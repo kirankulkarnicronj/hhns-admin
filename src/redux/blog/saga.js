@@ -1,6 +1,6 @@
 import { notification } from 'antd'
 import { all, takeEvery, put, call } from 'redux-saga/effects'
-import { createBlogApi, getBlogList } from 'services/blog'
+import { createBlogApi, getBlogList, getBlogByUuid } from 'services/blog'
 import actions from './action'
 
 export function* createBlogSaga({ payload }) {
@@ -57,9 +57,31 @@ export function* getBlogListSaga(payload) {
   }
 }
 
+export function* getBlogByUuidSaga(body) {
+  try {
+    const result = yield call(getBlogByUuid, body)
+    console.log('result =====>>>>', result)
+    const { data } = result
+    if (result.status === 200) {
+      yield put({
+        type: 'blog/SET_STATE',
+        payload: {
+          editBlog: data.blog,
+        },
+      })
+    }
+  } catch (err) {
+    notification.warning({
+      message: 'Error',
+      description: 'Some Error Occured',
+    })
+  }
+}
+
 export default function* rootSaga() {
   yield all([
     takeEvery(actions.CREATE_BLOG, createBlogSaga),
     takeEvery(actions.GET_LIST, getBlogListSaga),
+    takeEvery(actions.GET_BLOG_BY_ID, getBlogByUuidSaga),
   ])
 }

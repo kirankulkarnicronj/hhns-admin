@@ -31,3 +31,19 @@ export async function getBlogList(page) {
       return error
     })
 }
+
+export async function getBlogByUuid(request) {
+  const body = request.payload
+  const url = `${serverAddress}/api/blog/getblogbyid/`
+  return axios
+    .post(url, body)
+    .then(response => {
+      if (response && response.data) {
+        return response
+      }
+      return false
+    })
+    .catch(error => {
+      return error
+    })
+}

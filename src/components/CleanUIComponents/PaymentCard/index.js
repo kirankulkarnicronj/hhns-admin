@@ -36,7 +36,7 @@ class PaymentCard extends React.Component {
         {name && <span className={styles.name}>{name}</span>}
         {number && <span className={styles.number}>{number}</span>}
         {type && <span className={styles.type}>{type}</span>}
-        {footer && <div className={styles.footer}>{footer}</div>}
+        {footer && <div className={styles.footer}>{}</div>}
       </a>
     )
   }

@@ -3,6 +3,7 @@ import { Table, Button } from 'antd'
 import { Helmet } from 'react-helmet'
 import { connect } from 'react-redux'
 import renderHTML from 'react-render-html'
+import { Link } from 'react-router-dom'
 
 @connect(({ blog }) => ({ blog }))
 class BlogList extends React.Component {
@@ -42,17 +43,6 @@ class BlogList extends React.Component {
 
     const columns = [
       {
-        title: 'ID',
-        dataIndex: '_id',
-        key: '_id',
-        render: text => (
-          <a className="utils__link--underlined" href="javascript: void(0);">
-            {`#${text}`}
-          </a>
-        ),
-      },
-
-      {
         title: 'Title',
         dataIndex: 'title_en',
         key: 'title_en',
@@ -64,18 +54,6 @@ class BlogList extends React.Component {
         key: 'author',
       },
       {
-        title: 'Audio',
-        dataIndex: 'audio_files',
-        key: 'audio_files',
-        render: text => (text ? <span>{`${text}`}</span> : ''),
-      },
-      {
-        title: 'Descriptions',
-        dataIndex: 'body_en',
-        key: 'body_en',
-        render: body => (body ? renderHTML(this.showing100Characters(body)) : ''),
-      },
-      {
         title: 'Needs Translation',
         dataIndex: 'needs_translation',
         key: 'needs_translation',
@@ -83,12 +61,14 @@ class BlogList extends React.Component {
       },
       {
         title: 'Action',
-        key: 'action',
-        render: () => (
+        key: 'uuid',
+        render: record => (
           <span>
-            <Button icon="edit" className="mr-1" size="small">
-              View
-            </Button>
+            <Link to={{ pathname: '/blog/add-blog-post', state: record.uuid }}>
+              <Button icon="edit" className="mr-1" size="small">
+                View
+              </Button>
+            </Link>
             <Button icon="cross" size="small">
               Remove
             </Button>
