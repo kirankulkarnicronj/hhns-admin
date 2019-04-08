@@ -86,7 +86,7 @@ class BlogList extends React.Component {
           <span>
             <Link to={{ pathname: '/blog/add-blog-post', state: record.uuid }}>
               <Button icon="edit" className="mr-1" size="small">
-                View
+                Edit
               </Button>
             </Link>
             <Button

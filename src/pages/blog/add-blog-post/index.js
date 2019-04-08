@@ -33,12 +33,10 @@ class BlogAddPost extends React.Component {
                 checkedChildren="en"
                 unCheckedChildren="ru"
                 onChange={this.handleLanguage}
+                className="toggle"
+                style={{ width: '100px', marginLeft: '10px' }}
               />
             </div>
-            {/* <div className="utils__title">
-              <strong>En/Ru</strong>
-              <Switch defaultChecked checkedChildren="en" unCheckedChildren="ru" onChange={this.handleLanguage} />
-            </div> */}
           </div>
           <div className="card-body">
             <div className={styles.addPost}>
