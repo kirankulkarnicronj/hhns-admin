@@ -1,6 +1,12 @@
 import { notification } from 'antd'
 import { all, takeEvery, put, call } from 'redux-saga/effects'
-import { createBlogApi, getBlogList, getBlogByUuid } from 'services/blog'
+import {
+  createBlogApi,
+  getBlogList,
+  getBlogByUuid,
+  deleteBlogByUuid,
+  updateBlog,
+} from 'services/blog'
 import actions from './action'
 
 export function* createBlogSaga({ payload }) {
@@ -15,6 +21,8 @@ export function* createBlogSaga({ payload }) {
         type: 'blog/SET_STATE',
         payload: {
           isBlogCreated: true,
+          isDeleted: false,
+          isUpdated: false,
           blogs: [],
         },
       })
@@ -27,7 +35,7 @@ export function* createBlogSaga({ payload }) {
     yield put({
       type: 'blog/SET_STATE',
       payload: {
-        isBlogCreated: true,
+        isBlogCreated: false,
         blogs: [],
       },
     })
@@ -46,6 +54,9 @@ export function* getBlogListSaga(payload) {
         payload: {
           blogs: blog.results,
           totalBlogs: blog.total,
+          isBlogCreated: false,
+          isDeleted: false,
+          isUpdated: false,
         },
       })
     }
@@ -60,13 +71,15 @@ export function* getBlogListSaga(payload) {
 export function* getBlogByUuidSaga(body) {
   try {
     const result = yield call(getBlogByUuid, body)
-    console.log('result =====>>>>', result)
     const { data } = result
     if (result.status === 200) {
       yield put({
         type: 'blog/SET_STATE',
         payload: {
           editBlog: data.blog,
+          isBlogCreated: false,
+          isDeleted: false,
+          isUpdated: false,
         },
       })
     }
@@ -78,10 +91,64 @@ export function* getBlogByUuidSaga(body) {
   }
 }
 
+export function* deleteBlogByUuidSaga(payload) {
+  try {
+    const { uuid } = payload
+    const result = yield call(deleteBlogByUuid, uuid)
+    if (result.status === 200) {
+      yield put({
+        type: 'blog/SET_STATE',
+        payload: {
+          isDeleted: true,
+          isBlogCreated: false,
+          isUpdated: false,
+        },
+      })
+      notification.success({
+        message: 'Success',
+        description: 'Blog is Deleted successfully',
+      })
+    }
+  } catch (err) {
+    notification.warning({
+      message: 'Error',
+      description: 'Some Error Occured While Deleting Blog',
+    })
+  }
+}
+
+export function* updateBlogSaga(payload) {
+  try {
+    const { body, uuid } = payload.payload
+    const result = yield call(updateBlog, uuid, body)
+    if (result.status === 200) {
+      yield put({
+        type: 'blog/SET_STATE',
+        payload: {
+          isUpdated: true,
+          isBlogCreated: false,
+          isDeleted: false,
+        },
+      })
+      notification.success({
+        message: 'Success',
+        description: 'Blog is updated successfully',
+      })
+    }
+  } catch (err) {
+    notification.warning({
+      message: 'Error',
+      description: 'Some Error Occured While Updating Blog',
+    })
+  }
+}
+
 export default function* rootSaga() {
   yield all([
     takeEvery(actions.CREATE_BLOG, createBlogSaga),
     takeEvery(actions.GET_LIST, getBlogListSaga),
     takeEvery(actions.GET_BLOG_BY_ID, getBlogByUuidSaga),
+    takeEvery(actions.DELETE_BLOG_BY_ID, deleteBlogByUuidSaga),
+    takeEvery(actions.UPDATE_BLOG, updateBlogSaga),
   ])
 }

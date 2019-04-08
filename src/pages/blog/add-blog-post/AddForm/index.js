@@ -60,6 +60,9 @@ class AddForm extends React.Component {
         })
       }
     }
+    if (nextProps.blog.isBlogCreated || nextProps.blog.isUpdated) {
+      this.handleReset()
+    }
   }
 
   uuidv4 = () => {
@@ -76,24 +79,47 @@ class AddForm extends React.Component {
 
   handleFormBody = event => {
     event.preventDefault()
-    const { form, dispatch } = this.props
-    const { files, editorState } = this.state
+    const { form, dispatch, router, english } = this.props
+    const { location } = router
+    const uuid = location.state
+    const { files, editorState, editingBlog } = this.state
     const titleEn = form.getFieldValue('title')
     const tag = form.getFieldValue('tag')
     const language = form.getFieldValue('language')
     const bodyEn = draftToHtml(convertToRaw(editorState.getCurrentContent()))
     const body = {
-      title_en: titleEn,
       author: 'nirajanana swami',
-      body_en: bodyEn,
-      needs_translation: true,
-      uuid: this.uuidv4(),
+      uuid: uuid || this.uuidv4(),
+      language,
       files,
     }
-    dispatch({
-      type: 'blog/CREATE_BLOG',
-      payload: body,
-    })
+
+    if (english) {
+      body.title_en = titleEn
+      body.body_en = bodyEn
+      body.tags_en = tag
+      body.needs_translation = true
+    } else {
+      body.title_ru = titleEn
+      body.body_ru = bodyEn
+      body.tags_ru = tag
+      body.needs_translation = false
+    }
+    if (editingBlog) {
+      const payload = {
+        body,
+        uuid,
+      }
+      dispatch({
+        type: 'blog/UPDATE_BLOG',
+        payload,
+      })
+    } else {
+      dispatch({
+        type: 'blog/CREATE_BLOG',
+        payload: body,
+      })
+    }
   }
 
   onEditorStateChange: Function = editorState => {
@@ -214,28 +240,42 @@ class AddForm extends React.Component {
     })
   }
 
-  render() {
+  handleReset = () => {
+    // event.preventDefault()
     const { form } = this.props
+    form.resetFields()
+    this.setState({
+      editorState: '',
+      editingBlog: {},
+    })
+  }
+
+  render() {
+    const { form, english } = this.props
     const { editingBlog, editedBody, editorState } = this.state
     const { files } = editingBlog
 
     return (
       <Form className="mt-3" onSubmit={this.handleFormBody}>
         <div className="form-group">
-          <FormItem label="Title">
+          <FormItem label={english ? 'Title_En' : 'Title_Ru'}>
             {form.getFieldDecorator('title', {
               initialValue: editingBlog ? editingBlog.title_en : '',
             })(<Input placeholder="Post title" />)}
           </FormItem>
         </div>
         <div className="form-group">
-          <FormItem label="Tags">
-            {form.getFieldDecorator('tag')(<Input placeholder="Tags" />)}
+          <FormItem label={english ? 'Tags_En' : 'Tags_Ru'}>
+            {form.getFieldDecorator('tag', {
+              initialValue: editingBlog ? editingBlog.tags_en : '',
+            })(<Input placeholder="Tags" />)}
           </FormItem>
         </div>
         <div className="form-group">
           <FormItem label="Language">
-            {form.getFieldDecorator('language')(
+            {form.getFieldDecorator('language', {
+              initialValue: editingBlog ? editingBlog.language : '',
+            })(
               <Select
                 id="product-edit-colors"
                 showSearch
@@ -246,15 +286,15 @@ class AddForm extends React.Component {
                   option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }
               >
-                <Option value="blue">English</Option>
-                <Option value="red">Russian</Option>
+                <Option value="english">English</Option>
+                <Option value="russian">Russian</Option>
               </Select>,
             )}
           </FormItem>
         </div>
 
         <div className="form-group">
-          <FormItem label="Body">
+          <FormItem label={english ? 'Body_En' : 'Body_Ru'}>
             {form.getFieldDecorator('content', {
               initialValue: editorState || '',
             })(
@@ -310,7 +350,7 @@ class AddForm extends React.Component {
                 Save and Post
               </Button>
             </span>
-            <Button type="danger" htmlType="submit">
+            <Button type="danger" onClick={this.handleReset}>
               Discard
             </Button>
           </div>

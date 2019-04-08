@@ -7,6 +7,8 @@ const actions = {
   GET_LIST_ERROR: 'blog/GET_LIST_ERROR',
   GET_BLOG_BY_ID: 'blog/GET_BLOG_BY_ID',
   GET_BLOG_BY_ID_ERROR: 'blog/GET_BLOG_BY_ID_ERROR',
+  DELETE_BLOG_BY_ID: 'blog/DELETE_BLOG_BY_ID',
+  UPDATE_BLOG: 'blog/UPDATE_BLOG',
 }
 
 export default actions
