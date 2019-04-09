@@ -74,6 +74,6 @@ export default function* rootSaga() {
     takeEvery(actions.LOGIN, LOGIN),
     takeEvery(actions.LOAD_CURRENT_ACCOUNT, LOAD_CURRENT_ACCOUNT),
     takeEvery(actions.LOGOUT, LOGOUT),
-    //LOAD_CURRENT_ACCOUNT(), // run once on app load to check user auth
+    LOAD_CURRENT_ACCOUNT(), // run once on app load to check user auth
   ])
 }

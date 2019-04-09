@@ -1,6 +1,7 @@
 import React from 'react'
 import { Menu, Dropdown } from 'antd'
 import { connect } from 'react-redux'
+import reactCookie from 'react-cookies'
 import styles from './style.module.scss'
 
 @connect(({ settings }) => ({ settings }))
@@ -14,6 +15,15 @@ class LanguageSelector extends React.Component {
         value: key,
       },
     })
+
+    setTimeout(() => {
+      if (window.localStorage['app.settings.locale'] === '"ru-RU"') {
+        reactCookie.save('languageCode', 'ru', { path: '/' })
+      } else {
+        reactCookie.save('languageCode', 'en', { path: '/' })
+      }
+      window.location.reload()
+    }, 300)
   }
 
   render() {
@@ -30,23 +40,11 @@ class LanguageSelector extends React.Component {
           </span>
           English
         </Menu.Item>
-        <Menu.Item key="fr-FR">
-          <span role="img" aria-label="French" className="mr-2">
-            🇫🇷
-          </span>
-          French
-        </Menu.Item>
         <Menu.Item key="ru-RU">
           <span role="img" aria-label="Русский" className="mr-2">
             🇷🇺
           </span>
           Русский
-        </Menu.Item>
-        <Menu.Item key="zh-CN">
-          <span role="img" aria-label="简体中文" className="mr-2">
-            🇨🇳
-          </span>
-          简体中文
         </Menu.Item>
       </Menu>
     )
