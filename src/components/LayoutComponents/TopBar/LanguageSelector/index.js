@@ -23,7 +23,7 @@ class LanguageSelector extends React.Component {
         reactCookie.save('languageCode', 'en', { path: '/' })
       }
       window.location.reload()
-    }, 300)
+    }, 0)
   }
 
   render() {

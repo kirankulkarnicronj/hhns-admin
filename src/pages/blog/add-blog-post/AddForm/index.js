@@ -44,6 +44,7 @@ class AddForm extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.blog.editBlog) {
+      console.log('=======>', nextProps)
       const { blog } = nextProps
       const { editBlog } = blog
       const html = editBlog ? editBlog.body_en : ''
@@ -56,11 +57,16 @@ class AddForm extends React.Component {
         }
         this.setState({
           editingBlog: blog.editBlog,
+          files: blog.editBlog.files,
           editorState,
         })
       }
     }
     if (nextProps.blog.isBlogCreated || nextProps.blog.isUpdated) {
+      const { files } = this.state
+      this.setState({
+        files,
+      })
       this.handleReset()
     }
   }
@@ -93,7 +99,6 @@ class AddForm extends React.Component {
       language,
       files,
     }
-
     if (english) {
       body.title_en = titleEn
       body.body_en = bodyEn
@@ -157,7 +162,6 @@ class AddForm extends React.Component {
 
         array.push(finalUrl)
         this.setState({ files: array })
-
         this.uploadFileToS3UsingPresignedUrl(data.presignedUrl, file)
       },
       error() {
@@ -173,7 +177,7 @@ class AddForm extends React.Component {
     $.ajax({
       type: 'PUT',
       url: presignedUrl,
-      data: file,
+      data: file.originFileObj,
       headers: {
         'Content-Type': file.type,
         reportProgress: true,
@@ -197,21 +201,21 @@ class AddForm extends React.Component {
 
   saveUploadUrl = () => {}
 
-  beforeUpload = file => {
-    const isJPG = file.type === 'image/png'
-    if (!isJPG) {
-      message.error('You can only upload JPG file!')
-    }
-    const isLt2M = file.size / 1024 / 1024 < 2
-    if (!isLt2M) {
-      message.error('Image must smaller than 2MB!')
-    }
-    notification.success({
-      message: 'Waiting',
-      description: 'Uploading started',
-    })
-    return isJPG && isLt2M
-  }
+  // beforeUpload = file => {
+  //   const isJPG = file.type === 'image/png'
+  //   if (!isJPG) {
+  //     message.error('You can only upload JPG file!')
+  //   }
+  //   const isLt2M = file.size / 1024 / 1024 < 2
+  //   if (!isLt2M) {
+  //     message.error('Image must smaller than 2MB!')
+  //   }
+  //   notification.success({
+  //     message: 'Waiting',
+  //     description: 'Uploading started',
+  //   })
+  //   return isJPG && isLt2M
+  // }
 
   dummyRequest = ({ file, onSuccess }) => {
     setTimeout(() => {
@@ -230,6 +234,19 @@ class AddForm extends React.Component {
           message: 'File Deleted',
           description: 'File has been successfully deleted',
         })
+
+        const { files } = this.state
+
+        for (let i = 0; i < files.length; i += 1) {
+          if (files[i] === item) {
+            files.splice(i, 1)
+            break
+          }
+        }
+
+        this.setState({
+          files,
+        })
       },
       error() {
         notification.error({
@@ -242,18 +259,19 @@ class AddForm extends React.Component {
 
   handleReset = () => {
     // event.preventDefault()
-    const { form } = this.props
-    form.resetFields()
-    this.setState({
-      editorState: '',
-      editingBlog: {},
-    })
+    // const { form } = this.props
+    // form.resetFields()
+    // this.setState({
+    //   editorState: '',
+    //   editingBlog: {},
+    //   files: [],
+    // })
   }
 
   render() {
     const { form, english } = this.props
     const { editingBlog, editedBody, editorState } = this.state
-    const { files } = editingBlog
+    const { files } = this.state
 
     return (
       <Form className="mt-3" onSubmit={this.handleFormBody}>
@@ -327,9 +345,9 @@ class AddForm extends React.Component {
           <FormItem>
             {form.getFieldDecorator('Files')(
               <Dragger
+                showUploadList={false}
                 customRequest={this.dummyRequest}
                 onChange={this.handleFileChange}
-                beforeUpload={this.beforeUpload}
               >
                 <p className="ant-upload-drag-icon">
                   <Icon type="inbox" />

@@ -64,8 +64,9 @@ class BlogList extends React.Component {
     const columns = [
       {
         title: 'Title',
-        dataIndex: 'title_en',
-        key: 'title_en',
+        dataIndex:
+          window.localStorage['app.settings.locale'] === '"ru-RU"' ? 'title_ru' : 'title_en',
+        key: window.localStorage['app.settings.locale'] === '"ru-RU"' ? 'title_ru' : 'title_en',
         render: title => (title ? renderHTML(this.showing100Characters(title)) : ''),
       },
       {

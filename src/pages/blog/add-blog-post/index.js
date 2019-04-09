@@ -7,8 +7,13 @@ import styles from './style.module.scss'
 class BlogAddPost extends React.Component {
   constructor(props) {
     super(props)
+    let locale = true
+    if (window.localStorage['app.settings.locale'] === '"ru-RU"') {
+      locale = false
+    }
+
     this.state = {
-      language: true,
+      language: locale,
     }
   }
 
@@ -30,8 +35,8 @@ class BlogAddPost extends React.Component {
               <strong>Post Add/Edit</strong>
               <Switch
                 defaultChecked
-                checkedChildren="en"
-                unCheckedChildren="ru"
+                checkedChildren={language ? 'en' : 'ru'}
+                unCheckedChildren={language ? 'en' : 'ru'}
                 onChange={this.handleLanguage}
                 className="toggle"
                 style={{ width: '100px', marginLeft: '10px' }}
