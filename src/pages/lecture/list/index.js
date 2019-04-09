@@ -18,6 +18,17 @@ class ProductsList extends React.Component {
     })
   }
 
+  componentWillReceiveProps(nextProps) {
+    const { lecture, dispatch } = this.props
+    const { isDeleted } = lecture
+    if ((!isDeleted && nextProps.lecture.isDeleted) || (isDeleted && nextProps.lecture.isDeleted)) {
+      dispatch({
+        type: 'lecture/GET_LECTURES',
+        page: 1,
+      })
+    }
+  }
+
   showing100Characters = sentence => {
     let result = sentence
     let resultArray = result.split(' ')
@@ -34,6 +45,15 @@ class ProductsList extends React.Component {
     dispatch({
       type: 'lecture/GET_LECTURES',
       page,
+    })
+  }
+
+  deleteLecture = uuid => {
+    const { dispatch } = this.props
+    console.log('uuid====????', uuid)
+    dispatch({
+      type: 'lecture/DELETE_LECTURE',
+      uuid,
     })
   }
 
@@ -74,12 +94,18 @@ class ProductsList extends React.Component {
       {
         title: 'Action',
         key: 'action',
-        render: () => (
+        render: record => (
           <span>
             <Button icon="edit" className="mr-1" size="small">
               Edit
             </Button>
-            <Button icon="cross" size="small">
+            <Button
+              icon="cross"
+              size="small"
+              onClick={() => {
+                this.deleteLecture(record.uuid)
+              }}
+            >
               Remove
             </Button>
           </span>

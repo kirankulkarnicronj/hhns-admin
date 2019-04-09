@@ -8,6 +8,8 @@ import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css'
 import { Form, Input, Button, Select, Upload, Icon, message, notification } from 'antd'
 import { connect } from 'react-redux'
 import { EditorState, convertToRaw, ContentState } from 'draft-js'
+import draftToHtml from 'draftjs-to-html'
+import htmlToDraft from 'html-to-draftjs'
 import { Helmet } from 'react-helmet'
 import styles from './style.module.scss'
 
@@ -20,6 +22,7 @@ const { Dragger } = Upload
 @connect(({ lecture, router }) => ({ lecture, router }))
 class AddLecture extends React.Component {
   state = {
+    files: [],
     editorState: EditorState.createEmpty(),
     editingBlog: '',
     editedBody: '',
@@ -47,6 +50,76 @@ class AddLecture extends React.Component {
       // eslint-disable-next-line no-bitwise
       const v = c === 'x' ? r : (r & 0x3) | 0x8
       return v.toString(16)
+    })
+  }
+
+  handleFormBody = e => {
+    e.preventDefault()
+    const { form, dispatch, router, english } = this.props
+    const { files, editorState, editingBlog } = this.state
+    const title = form.getFieldValue('title')
+    const tag = form.getFieldValue('tag')
+    const language = form.getFieldValue('language')
+    const bodylecture = draftToHtml(convertToRaw(editorState.getCurrentContent()))
+    const author = form.getFieldValue('author')
+    const location = form.getFieldValue('location')
+    const event = form.getFieldValue('event')
+    const topic = form.getFieldValue('topic')
+    const parts = form.getFieldValue('parts')
+    const chapter = form.getFieldValue('chapter')
+    const verse = form.getFieldValue('verse')
+
+    const body = {
+      uuid: this.uuidv4(),
+      verse,
+      chapter,
+      author,
+      tags: tag,
+      counters: {
+        ru_summary_view: 0,
+        ru_transcription_view: 0,
+        en_summary_view: 0,
+        en_transcription_view: 0,
+        video_page_view: 0,
+        downloads: 0,
+        audio_play_count: 0,
+        audio_page_view: 0,
+      },
+      en: {
+        location,
+        topic,
+        event,
+        title,
+        summary: {
+          attachment_link: '',
+          attachment_name: '',
+          text: '',
+        },
+        transcription: {
+          attachment_name: '',
+          text: '',
+        },
+      },
+      ru: {
+        location,
+        topic,
+        event,
+        title,
+        summary: {
+          attachment_link: '',
+          attachment_name: '',
+          text: '',
+        },
+        transcription: {
+          attachment_name: '',
+          text: '',
+        },
+      },
+    }
+    console.log('body =====>>>>', body)
+    dispatch({
+      type: 'lecture/CREATE_LECTURE',
+      body,
     })
   }
 
@@ -93,7 +166,7 @@ class AddLecture extends React.Component {
           </div>
           <div className="card-body">
             <div className={styles.addPost}>
-              <Form className="mt-3" onSubmit={this.handleFormBody}>
+              <Form className="mt-3">
                 <div className="form-group">
                   <FormItem label={english ? 'Title_En' : 'Title_Ru'}>
                     {form.getFieldDecorator('title', {
@@ -169,7 +242,7 @@ class AddLecture extends React.Component {
                 </div>
                 <div className="form-group">
                   <FormItem label="Event">
-                    {form.getFieldDecorator('author')(
+                    {form.getFieldDecorator('event')(
                       <Select
                         id="product-edit-colors"
                         showSearch
@@ -221,21 +294,21 @@ class AddLecture extends React.Component {
                 </div>
                 <div className="form-group">
                   <FormItem label="part">
-                    {form.getFieldDecorator('tag', {
+                    {form.getFieldDecorator('parts', {
                       initialValue: editingBlog ? editingBlog.tags_en : '',
                     })(<Input placeholder="parts/songs" />)}
                   </FormItem>
                 </div>
                 <div className="form-group">
                   <FormItem label="chapter">
-                    {form.getFieldDecorator('title', {
+                    {form.getFieldDecorator('chapter', {
                       initialValue: editingBlog ? editingBlog.title_en : '',
                     })(<Input placeholder="Chapter" />)}
                   </FormItem>
                 </div>
                 <div className="form-group">
                   <FormItem label="varse">
-                    {form.getFieldDecorator('title', {
+                    {form.getFieldDecorator('verse', {
                       initialValue: editingBlog ? editingBlog.title_en : '',
                     })(<Input placeholder="Verse/Text" />)}
                   </FormItem>
@@ -296,7 +369,7 @@ class AddLecture extends React.Component {
                 <FormItem>
                   <div className={styles.submit}>
                     <span className="mr-3">
-                      <Button type="primary" htmlType="submit">
+                      <Button type="primary" onClick={this.handleFormBody}>
                         Save and Post
                       </Button>
                     </span>

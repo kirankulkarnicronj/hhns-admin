@@ -1,7 +1,7 @@
 import axios from 'axios'
 import serverAddress from './config'
 
-export default async function getLectureList(page) {
+export async function getLectureList(page) {
   const pageNumber = page || 1
   const url = `${serverAddress}/api/lecture/?page=${pageNumber}`
   return axios
