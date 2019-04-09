@@ -5,6 +5,8 @@ const initialState = {
   blogs: [],
   totalBlogs: '',
   isBlogCreated: false,
+  isDeleted: false,
+  isUpdated: false,
   editBlog: '',
   error: '',
 }

@@ -47,3 +47,33 @@ export async function getBlogByUuid(request) {
       return error
     })
 }
+
+export async function deleteBlogByUuid(uuid) {
+  const url = `${serverAddress}/api/blog/${uuid}/remove`
+  return axios
+    .post(url)
+    .then(response => {
+      if (response.status === 200) {
+        return response
+      }
+      return false
+    })
+    .catch(error => {
+      return error
+    })
+}
+
+export async function updateBlog(uuid, body) {
+  const url = `${serverAddress}/api/blog/${uuid}/update`
+  return axios
+    .post(url, body)
+    .then(response => {
+      if (response.status === 200) {
+        return response
+      }
+      return false
+    })
+    .catch(error => {
+      return error
+    })
+}

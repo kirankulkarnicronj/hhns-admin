@@ -17,6 +17,17 @@ class BlogList extends React.Component {
     })
   }
 
+  componentWillReceiveProps(nextProps) {
+    const { blog, dispatch } = this.props
+    const { isDeleted } = blog
+    if ((!isDeleted && nextProps.blog.isDeleted) || (isDeleted && nextProps.blog.isDeleted)) {
+      dispatch({
+        type: 'blog/GET_LIST',
+        page: 1,
+      })
+    }
+  }
+
   showing100Characters = sentence => {
     let result = sentence
     let resultArray = result.split(' ')
@@ -33,6 +44,15 @@ class BlogList extends React.Component {
     dispatch({
       type: 'blog/GET_LIST',
       page,
+    })
+  }
+
+  deleteBlog = uuid => {
+    const { dispatch } = this.props
+    console.log('uuid====????', uuid)
+    dispatch({
+      type: 'blog/DELETE_BLOG_BY_ID',
+      uuid,
     })
   }
 
@@ -66,10 +86,16 @@ class BlogList extends React.Component {
           <span>
             <Link to={{ pathname: '/blog/add-blog-post', state: record.uuid }}>
               <Button icon="edit" className="mr-1" size="small">
-                View
+                Edit
               </Button>
             </Link>
-            <Button icon="cross" size="small">
+            <Button
+              icon="cross"
+              size="small"
+              onClick={() => {
+                this.deleteBlog(record.uuid)
+              }}
+            >
               Remove
             </Button>
           </span>
