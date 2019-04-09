@@ -11,6 +11,7 @@ const initialState = {
   isUpdated: false,
   isLectureCreated: false,
   isDeleted: false,
+  editLecture: '',
 }
 
 export default function lectureReducer(state = initialState, action) {

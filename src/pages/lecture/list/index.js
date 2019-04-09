@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet'
 // import styles from './style.module.scss'
 import { connect } from 'react-redux'
 import renderHTML from 'react-render-html'
-// import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 @connect(({ lecture }) => ({ lecture }))
 class ProductsList extends React.Component {
@@ -19,9 +19,8 @@ class ProductsList extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    const { lecture, dispatch } = this.props
-    const { isDeleted } = lecture
-    if ((!isDeleted && nextProps.lecture.isDeleted) || (isDeleted && nextProps.lecture.isDeleted)) {
+    const { dispatch } = this.props
+    if (nextProps.lecture.isDeleted) {
       dispatch({
         type: 'lecture/GET_LECTURES',
         page: 1,
@@ -96,9 +95,11 @@ class ProductsList extends React.Component {
         key: 'action',
         render: record => (
           <span>
-            <Button icon="edit" className="mr-1" size="small">
-              Edit
-            </Button>
+            <Link to={{ pathname: '/lecture/create', state: record.uuid }}>
+              <Button icon="edit" className="mr-1" size="small">
+                Edit
+              </Button>
+            </Link>
             <Button
               icon="cross"
               size="small"

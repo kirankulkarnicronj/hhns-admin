@@ -7,6 +7,7 @@ const actions = {
   CREATE_LECTURE: 'lecture/CREATE_LECTURE',
   DELETE_LECTURE: 'lecture/DELETE_LECTURE',
   UPDATE_LECTURE: 'lecture/UPDATE_LECTURE',
+  GET_LECTURE_BY_ID: 'lecture/GET_LECTURE_BY_ID',
 }
 
 export default actions

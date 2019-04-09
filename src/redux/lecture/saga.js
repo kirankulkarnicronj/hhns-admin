@@ -1,6 +1,12 @@
 import { notification } from 'antd'
 import { all, takeEvery, put, call } from 'redux-saga/effects'
-import { getLectureList, createLecture, deleteLectureByUuid, updateLecture } from 'services/lecture'
+import {
+  getLectureList,
+  createLecture,
+  deleteLectureByUuid,
+  updateLecture,
+  getLectureByUuid,
+} from 'services/lecture'
 import { getTopicList, getEventList, getLocationList } from 'services/common'
 import actions from './action'
 
@@ -17,6 +23,10 @@ export function* getLectureListSaga(payload) {
         payload: {
           lectures: lecture.results,
           totalLectures: lecture.total,
+          editLecture: '',
+          isLectureCreated: false,
+          isDeleted: false,
+          isUpdated: false,
         },
       })
     }
@@ -41,6 +51,7 @@ export function* createLectureSaga(payload) {
         type: 'lecture/SET_STATE',
         payload: {
           isLectureCreated: true,
+          editLecture: '',
           isDeleted: false,
           isUpdated: false,
           lectures: [],
@@ -63,6 +74,7 @@ export function* deleteBlogByUuidSaga(payload) {
       yield put({
         type: 'lecture/SET_STATE',
         payload: {
+          editLecture: '',
           isDeleted: true,
           isLectureCreated: false,
           isUpdated: false,
@@ -81,14 +93,16 @@ export function* deleteBlogByUuidSaga(payload) {
   }
 }
 
-export function* updateBlogSaga(payload) {
+export function* updateLectureSaga(payload) {
   try {
     const { body, uuid } = payload.payload
+    console.log('payload ====>>>>', body, uuid)
     const result = yield call(updateLecture, uuid, body)
     if (result.status === 200) {
       yield put({
         type: 'lecture/SET_STATE',
         payload: {
+          editLecture: '',
           isUpdated: true,
           isLectureCreated: false,
           isDeleted: false,
@@ -114,6 +128,7 @@ export function* getTopics() {
       yield put({
         type: 'lecture/SET_STATE',
         payload: {
+          editLecture: '',
           topics: data.topic,
         },
       })
@@ -134,6 +149,7 @@ export function* getEvents() {
       yield put({
         type: 'lecture/SET_STATE',
         payload: {
+          editLecture: '',
           events: data.event,
         },
       })
@@ -154,6 +170,7 @@ export function* getLocations() {
       yield put({
         type: 'lecture/SET_STATE',
         payload: {
+          editLecture: '',
           locations: data.location,
         },
       })
@@ -165,6 +182,31 @@ export function* getLocations() {
     })
   }
 }
+
+export function* getLectureByUuidSaga(body) {
+  try {
+    const result = yield call(getLectureByUuid, body)
+    console.log('result =====>>>>', result)
+    const { data } = result
+    if (result.status === 200) {
+      yield put({
+        type: 'lecture/SET_STATE',
+        payload: {
+          editLecture: data.lecture,
+          isLectureCreated: false,
+          isDeleted: false,
+          isUpdated: false,
+        },
+      })
+    }
+  } catch (err) {
+    notification.error({
+      message: 'Error',
+      description: 'Error Occured while getting Lecture',
+    })
+  }
+}
+
 export default function* rootSaga() {
   yield all([
     takeEvery(actions.GET_LECTURES, getLectureListSaga),
@@ -173,6 +215,7 @@ export default function* rootSaga() {
     takeEvery(actions.GET_LOCATIONS, getLocations),
     takeEvery(actions.CREATE_LECTURE, createLectureSaga),
     takeEvery(actions.DELETE_LECTURE, deleteBlogByUuidSaga),
-    takeEvery(actions.UPDATE_LECTURE, updateBlogSaga),
+    takeEvery(actions.UPDATE_LECTURE, updateLectureSaga),
+    takeEvery(actions.GET_LECTURE_BY_ID, getLectureByUuidSaga),
   ])
 }

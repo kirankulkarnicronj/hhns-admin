@@ -48,7 +48,24 @@ export async function deleteLectureByUuid(uuid) {
 }
 
 export async function updateLecture(uuid, body) {
+  console.log('value in api ====>>>', body, uuid)
   const url = `${serverAddress}/api/lecture/${uuid}/update`
+  return axios
+    .post(url, body)
+    .then(response => {
+      if (response.status === 200) {
+        return response
+      }
+      return false
+    })
+    .catch(error => {
+      return error
+    })
+}
+
+export async function getLectureByUuid(request) {
+  const body = request.payload
+  const url = `${serverAddress}/api/lecture/getlecturebyid/`
   return axios
     .post(url, body)
     .then(response => {

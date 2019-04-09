@@ -24,12 +24,23 @@ class AddLecture extends React.Component {
   state = {
     files: [],
     editorState: EditorState.createEmpty(),
-    editingBlog: '',
+    editinglecture: '',
     editedBody: '',
   }
 
   componentDidMount() {
-    const { dispatch } = this.props
+    const { router, dispatch } = this.props
+    const { location } = router
+    const uuid = location.state
+    if (uuid !== undefined) {
+      const body = {
+        uuid,
+      }
+      dispatch({
+        type: 'lecture/GET_LECTURE_BY_ID',
+        payload: body,
+      })
+    }
     dispatch({
       type: 'lecture/GET_TOPICS',
     })
@@ -38,6 +49,22 @@ class AddLecture extends React.Component {
     })
     dispatch({
       type: 'lecture/GET_LOCATIONS',
+    })
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.lecture.editLecture !== '') {
+      console.log('=======>', nextProps)
+      const { lecture } = nextProps
+      this.setState({
+        editinglecture: lecture.editLecture,
+      })
+    }
+  }
+
+  componentWillUnmount() {
+    this.setState({
+      editinglecture: '',
     })
   }
 
@@ -56,13 +83,15 @@ class AddLecture extends React.Component {
   handleFormBody = e => {
     e.preventDefault()
     const { form, dispatch, router, english } = this.props
-    const { files, editorState, editingBlog } = this.state
+    const { files, editorState, editinglecture } = this.state
+    const { location } = router
+    const uuid = location.state
     const title = form.getFieldValue('title')
     const tag = form.getFieldValue('tag')
     const language = form.getFieldValue('language')
     const bodylecture = draftToHtml(convertToRaw(editorState.getCurrentContent()))
     const author = form.getFieldValue('author')
-    const location = form.getFieldValue('location')
+    const locationlecture = form.getFieldValue('location')
     const event = form.getFieldValue('event')
     const topic = form.getFieldValue('topic')
     const parts = form.getFieldValue('parts')
@@ -70,7 +99,8 @@ class AddLecture extends React.Component {
     const verse = form.getFieldValue('verse')
 
     const body = {
-      uuid: this.uuidv4(),
+      uuid: uuid || this.uuidv4(),
+      parts,
       verse,
       chapter,
       author,
@@ -86,7 +116,7 @@ class AddLecture extends React.Component {
         audio_page_view: 0,
       },
       en: {
-        location,
+        location: locationlecture,
         topic,
         event,
         title,
@@ -101,7 +131,7 @@ class AddLecture extends React.Component {
         },
       },
       ru: {
-        location,
+        location: locationlecture,
         topic,
         event,
         title,
@@ -116,11 +146,21 @@ class AddLecture extends React.Component {
         },
       },
     }
-    console.log('body =====>>>>', body)
-    dispatch({
-      type: 'lecture/CREATE_LECTURE',
-      body,
-    })
+    if (editinglecture !== '') {
+      const payload = {
+        body,
+        uuid,
+      }
+      dispatch({
+        type: 'lecture/UPDATE_LECTURE',
+        payload,
+      })
+    } else {
+      dispatch({
+        type: 'lecture/CREATE_LECTURE',
+        body,
+      })
+    }
   }
 
   onEditorStateChange: Function = editorState => {
@@ -144,7 +184,7 @@ class AddLecture extends React.Component {
     form.resetFields()
     this.setState({
       editorState: '',
-      editingBlog: {},
+      editinglecture: '',
     })
   }
 
@@ -152,8 +192,8 @@ class AddLecture extends React.Component {
     console.log('this.prpo=====>>>>', this.props)
     const { form, english, lecture } = this.props
     const { topics, events, locations } = lecture
-    const { editingBlog, editedBody, editorState } = this.state
-    const { files } = editingBlog
+    const { editinglecture, editedBody, editorState } = this.state
+    const { files } = editinglecture
 
     return (
       <div>
@@ -170,13 +210,16 @@ class AddLecture extends React.Component {
                 <div className="form-group">
                   <FormItem label={english ? 'Title_En' : 'Title_Ru'}>
                     {form.getFieldDecorator('title', {
-                      initialValue: editingBlog ? editingBlog.title_en : '',
+                      initialValue:
+                        editinglecture && editinglecture.en ? editinglecture.en.title : '',
                     })(<Input placeholder="Post title" />)}
                   </FormItem>
                 </div>
                 <div className="form-group">
                   <FormItem label="Author">
-                    {form.getFieldDecorator('author')(
+                    {form.getFieldDecorator('author', {
+                      initialValue: editinglecture ? editinglecture.author : '',
+                    })(
                       <Select
                         id="product-edit-colors"
                         showSearch
@@ -196,7 +239,7 @@ class AddLecture extends React.Component {
                 <div className="form-group">
                   <FormItem label="Language">
                     {form.getFieldDecorator('language', {
-                      initialValue: editingBlog ? editingBlog.language : '',
+                      initialValue: editinglecture ? editinglecture.language : '',
                     })(
                       <Select
                         id="product-edit-colors"
@@ -216,7 +259,10 @@ class AddLecture extends React.Component {
                 </div>
                 <div className="form-group">
                   <FormItem label="Location">
-                    {form.getFieldDecorator('location')(
+                    {form.getFieldDecorator('location', {
+                      initialValue:
+                        editinglecture && editinglecture.en ? editinglecture.en.location : '',
+                    })(
                       <Select
                         id="product-edit-colors"
                         showSearch
@@ -242,7 +288,10 @@ class AddLecture extends React.Component {
                 </div>
                 <div className="form-group">
                   <FormItem label="Event">
-                    {form.getFieldDecorator('event')(
+                    {form.getFieldDecorator('event', {
+                      initialValue:
+                        editinglecture && editinglecture.en ? editinglecture.en.event : '',
+                    })(
                       <Select
                         id="product-edit-colors"
                         showSearch
@@ -268,7 +317,10 @@ class AddLecture extends React.Component {
                 </div>
                 <div className="form-group">
                   <FormItem label="Topic">
-                    {form.getFieldDecorator('topic')(
+                    {form.getFieldDecorator('topic', {
+                      initialValue:
+                        editinglecture && editinglecture.en ? editinglecture.en.topic : '',
+                    })(
                       <Select
                         id="product-edit-colors"
                         showSearch
@@ -295,21 +347,21 @@ class AddLecture extends React.Component {
                 <div className="form-group">
                   <FormItem label="part">
                     {form.getFieldDecorator('parts', {
-                      initialValue: editingBlog ? editingBlog.tags_en : '',
+                      initialValue: editinglecture ? editinglecture.parts : '',
                     })(<Input placeholder="parts/songs" />)}
                   </FormItem>
                 </div>
                 <div className="form-group">
                   <FormItem label="chapter">
                     {form.getFieldDecorator('chapter', {
-                      initialValue: editingBlog ? editingBlog.title_en : '',
+                      initialValue: editinglecture ? editinglecture.chapter : '',
                     })(<Input placeholder="Chapter" />)}
                   </FormItem>
                 </div>
                 <div className="form-group">
                   <FormItem label="varse">
                     {form.getFieldDecorator('verse', {
-                      initialValue: editingBlog ? editingBlog.title_en : '',
+                      initialValue: editinglecture ? editinglecture.verse : '',
                     })(<Input placeholder="Verse/Text" />)}
                   </FormItem>
                 </div>
