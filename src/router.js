@@ -232,6 +232,19 @@ const routes = [
     exact: true,
   },
 
+  // lecture
+  {
+    path: '/lecture/list',
+    component: loadable(() => import('pages/lecture/list')),
+    exact: true,
+  },
+
+  {
+    path: '/lecture/create',
+    component: loadable(() => import('pages/lecture/addlecture')),
+    exact: true,
+  },
+
   // YouTube
   {
     path: '/youtube/feed',

@@ -233,24 +233,38 @@ export async function getLeftMenuData() {
           title: 'Feed',
           key: 'blogFeed',
           url: '/blog/feed',
-          pro: true,
         },
         {
           title: 'Post',
           key: 'blogPost',
           url: '/blog/post',
-          pro: true,
         },
         {
           title: 'Add Post',
           key: 'blogAddPost',
           url: '/blog/add-blog-post',
-          pro: true,
         },
         {
           title: 'List',
           key: 'blogList',
           url: '/blog/blog-list',
+        },
+      ],
+    },
+    {
+      title: 'Lecture',
+      key: 'lecture',
+      icon: 'icmn icmn-wordpress',
+      children: [
+        {
+          title: 'list',
+          key: 'list',
+          url: '/lecture/list',
+        },
+        {
+          title: 'Add Lecture',
+          key: 'addLecture',
+          url: '/lecture/create',
         },
       ],
     },
@@ -558,19 +572,32 @@ export async function getTopMenuData() {
               title: 'Feed',
               key: 'blogFeed',
               url: '/blog/feed',
-              pro: true,
             },
             {
               title: 'Post',
               key: 'blogPost',
               url: '/blog/post',
-              pro: true,
             },
             {
               title: 'Add Post',
               key: 'blogAddPost',
               url: '/blog/add-blog-post',
-              pro: true,
+            },
+          ],
+        },
+        {
+          title: 'Lecture',
+          key: 'lecture',
+          children: [
+            {
+              title: 'list',
+              key: 'list',
+              url: '/lecture/list',
+            },
+            {
+              title: 'Add Lecture',
+              key: 'addLecture',
+              url: '/lecture/create',
             },
           ],
         },
