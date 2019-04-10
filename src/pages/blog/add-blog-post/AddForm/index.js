@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable no-unused-vars */
@@ -44,10 +45,9 @@ class AddForm extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.blog.editBlog) {
-      console.log('=======>', nextProps)
-      const { blog } = nextProps
+      const { blog, english } = nextProps
       const { editBlog } = blog
-      const html = editBlog ? editBlog.body_en : ''
+      const html = editBlog ? (english ? editBlog.body_en : editBlog.body_ru) : ''
       let editorState = ''
       if (html.length > 0) {
         const contentBlock = htmlToDraft(html)
@@ -140,9 +140,6 @@ class AddForm extends React.Component {
   }
 
   handleFileChange = info => {
-    if (info.file.status === 'uploading') {
-      console.log('uploading')
-    }
     if (info.file.status === 'done') {
       this.uploads3(info.file)
     }
@@ -184,7 +181,6 @@ class AddForm extends React.Component {
       },
       processData: false,
       success: data => {
-        console.log('success')
         notification.success({
           message: 'Success',
           description: 'file has been uploaded successfully',
@@ -199,24 +195,6 @@ class AddForm extends React.Component {
     })
   }
 
-  saveUploadUrl = () => {}
-
-  // beforeUpload = file => {
-  //   const isJPG = file.type === 'image/png'
-  //   if (!isJPG) {
-  //     message.error('You can only upload JPG file!')
-  //   }
-  //   const isLt2M = file.size / 1024 / 1024 < 2
-  //   if (!isLt2M) {
-  //     message.error('Image must smaller than 2MB!')
-  //   }
-  //   notification.success({
-  //     message: 'Waiting',
-  //     description: 'Uploading started',
-  //   })
-  //   return isJPG && isLt2M
-  // }
-
   dummyRequest = ({ file, onSuccess }) => {
     setTimeout(() => {
       onSuccess('ok')
@@ -225,7 +203,6 @@ class AddForm extends React.Component {
 
   delereFile = item => {
     const fileName = item.substr(item.lastIndexOf('.com/') + 5)
-    console.log(fileName)
     $.ajax({
       type: 'GET',
       url: `http://localhost:3000/api/blog/deleteFile/?filename=${fileName}`,
@@ -278,14 +255,22 @@ class AddForm extends React.Component {
         <div className="form-group">
           <FormItem label={english ? 'Title_En' : 'Title_Ru'}>
             {form.getFieldDecorator('title', {
-              initialValue: editingBlog ? editingBlog.title_en : '',
+              initialValue: editingBlog
+                ? english
+                  ? editingBlog.title_en
+                  : editingBlog.title_ru
+                : '',
             })(<Input placeholder="Post title" />)}
           </FormItem>
         </div>
         <div className="form-group">
           <FormItem label={english ? 'Tags_En' : 'Tags_Ru'}>
             {form.getFieldDecorator('tag', {
-              initialValue: editingBlog ? editingBlog.tags_en : '',
+              initialValue: editingBlog
+                ? english
+                  ? editingBlog.tags_en
+                  : editingBlog.tags_ru
+                : '',
             })(<Input placeholder="Tags" />)}
           </FormItem>
         </div>

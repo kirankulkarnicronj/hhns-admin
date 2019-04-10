@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
@@ -5,8 +6,9 @@
 import React from 'react'
 import { Editor } from 'react-draft-wysiwyg'
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css'
-import { Form, Input, Button, Select, Upload, Icon, message, notification } from 'antd'
+import { Form, Input, Button, Select, Upload, Switch, Icon, notification } from 'antd'
 import { connect } from 'react-redux'
+import $ from 'jquery'
 import { EditorState, convertToRaw, ContentState } from 'draft-js'
 import draftToHtml from 'draftjs-to-html'
 import htmlToDraft from 'html-to-draftjs'
@@ -21,11 +23,15 @@ const { Dragger } = Upload
 @Form.create()
 @connect(({ lecture, router }) => ({ lecture, router }))
 class AddLecture extends React.Component {
-  state = {
-    files: [],
-    editorState: EditorState.createEmpty(),
-    editinglecture: '',
-    editedBody: '',
+  constructor(props) {
+    super(props)
+    this.state = {
+      files: [],
+      editorState: EditorState.createEmpty(),
+      editinglecture: '',
+      editedBody: '',
+      language: true,
+    }
   }
 
   componentDidMount() {
@@ -54,7 +60,6 @@ class AddLecture extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.lecture.editLecture !== '') {
-      console.log('=======>', nextProps)
       const { lecture } = nextProps
       this.setState({
         editinglecture: lecture.editLecture,
@@ -77,6 +82,12 @@ class AddLecture extends React.Component {
       // eslint-disable-next-line no-bitwise
       const v = c === 'x' ? r : (r & 0x3) | 0x8
       return v.toString(16)
+    })
+  }
+
+  handleLanguage = checked => {
+    this.setState({
+      language: checked,
     })
   }
 
@@ -169,17 +180,108 @@ class AddLecture extends React.Component {
     })
   }
 
+  getBase64 = (img, callback) => {
+    const reader = new FileReader()
+    reader.addEventListener('load', () => callback(reader.result))
+    reader.readAsDataURL(img)
+  }
+
   handleFileChange = info => {
-    if (info.file.status === 'uploading') {
-      console.log('uploading')
-    }
     if (info.file.status === 'done') {
       this.uploads3(info.file)
     }
   }
 
+  uploads3 = file => {
+    const fileName = file.name
+    const fileType = file.type
+    $.ajax({
+      type: 'GET',
+      url: `http://localhost:3000/api/blog/generateUploadUrl?name=folder1/${fileName}&type=${fileType}`,
+      success: data => {
+        const temp = data.presignedUrl.toString()
+        const finalUrl = temp.substr(0, temp.lastIndexOf('?'))
+        const { files } = this.state
+        const array = [...files]
+
+        array.push(finalUrl)
+        this.setState({ files: array })
+        this.uploadFileToS3UsingPresignedUrl(data.presignedUrl, file)
+      },
+      error() {
+        notification.error({
+          message: 'shalu',
+          description: 'Error occured during uploading, Please try again',
+        })
+      },
+    })
+  }
+
+  uploadFileToS3UsingPresignedUrl = (presignedUrl, file) => {
+    $.ajax({
+      type: 'PUT',
+      url: presignedUrl,
+      data: file.originFileObj,
+      headers: {
+        'Content-Type': file.type,
+        reportProgress: true,
+      },
+      processData: false,
+      success: data => {
+        notification.success({
+          message: 'Success',
+          description: 'file has been uploaded successfully',
+        })
+      },
+      error() {
+        notification.warning({
+          message: 'error',
+          description: 'Error occured during uploading, Please try again',
+        })
+      },
+    })
+  }
+
+  dummyRequest = ({ file, onSuccess }) => {
+    setTimeout(() => {
+      onSuccess('ok')
+    }, 0)
+  }
+
+  deleteFile = item => {
+    const fileName = item.substr(item.lastIndexOf('.com/') + 5)
+    $.ajax({
+      type: 'GET',
+      url: `http://localhost:3000/api/blog/deleteFile/?filename=${fileName}`,
+      success: data => {
+        notification.success({
+          message: 'File Deleted',
+          description: 'File has been successfully deleted',
+        })
+
+        const { files } = this.state
+
+        for (let i = 0; i < files.length; i += 1) {
+          if (files[i] === item) {
+            files.splice(i, 1)
+            break
+          }
+        }
+
+        this.setState({
+          files,
+        })
+      },
+      error() {
+        notification.error({
+          message: 'error',
+          description: 'Error occured during uploading, Please try again',
+        })
+      },
+    })
+  }
+
   handleReset = () => {
-    // event.preventDefault()
     const { form } = this.props
     form.resetFields()
     this.setState({
@@ -189,12 +291,9 @@ class AddLecture extends React.Component {
   }
 
   render() {
-    console.log('this.prpo=====>>>>', this.props)
     const { form, english, lecture } = this.props
     const { topics, events, locations } = lecture
-    const { editinglecture, editedBody, editorState } = this.state
-    const { files } = editinglecture
-
+    const { editinglecture, editedBody, editorState, language, files } = this.state
     return (
       <div>
         <Helmet title="Add Blog Post" />
@@ -202,16 +301,28 @@ class AddLecture extends React.Component {
           <div className="card-header mb-2">
             <div className="utils__title">
               <strong>Lecture Add/Edit</strong>
+              <Switch
+                defaultChecked
+                checkedChildren={language ? 'en' : 'ru'}
+                unCheckedChildren={language ? 'en' : 'ru'}
+                onChange={this.handleLanguage}
+                className="toggle"
+                style={{ width: '100px', marginLeft: '10px' }}
+              />
             </div>
           </div>
           <div className="card-body">
             <div className={styles.addPost}>
               <Form className="mt-3">
                 <div className="form-group">
-                  <FormItem label={english ? 'Title_En' : 'Title_Ru'}>
+                  <FormItem label={language ? 'Title_En' : 'Title_Ru'}>
                     {form.getFieldDecorator('title', {
                       initialValue:
-                        editinglecture && editinglecture.en ? editinglecture.en.title : '',
+                        editinglecture && editinglecture.en && editinglecture.ru
+                          ? language
+                            ? editinglecture.en.title
+                            : editinglecture.ru.title
+                          : '',
                     })(<Input placeholder="Post title" />)}
                   </FormItem>
                 </div>
@@ -258,10 +369,14 @@ class AddLecture extends React.Component {
                   </FormItem>
                 </div>
                 <div className="form-group">
-                  <FormItem label="Location">
+                  <FormItem label={language ? 'Location_En' : 'Location_Ru'}>
                     {form.getFieldDecorator('location', {
                       initialValue:
-                        editinglecture && editinglecture.en ? editinglecture.en.location : '',
+                        editinglecture && editinglecture.en && editinglecture.ru
+                          ? language
+                            ? editinglecture.en.location
+                            : editinglecture.ru.location
+                          : '',
                     })(
                       <Select
                         id="product-edit-colors"
@@ -287,10 +402,14 @@ class AddLecture extends React.Component {
                   </FormItem>
                 </div>
                 <div className="form-group">
-                  <FormItem label="Event">
+                  <FormItem label={language ? 'Event_En' : 'Event_Ru'}>
                     {form.getFieldDecorator('event', {
                       initialValue:
-                        editinglecture && editinglecture.en ? editinglecture.en.event : '',
+                        editinglecture && editinglecture.en && editinglecture.ru
+                          ? language
+                            ? editinglecture.en.event
+                            : editinglecture.ru.event
+                          : '',
                     })(
                       <Select
                         id="product-edit-colors"
@@ -316,10 +435,14 @@ class AddLecture extends React.Component {
                   </FormItem>
                 </div>
                 <div className="form-group">
-                  <FormItem label="Topic">
+                  <FormItem label={language ? 'Topic_En' : 'Topic_Ru'}>
                     {form.getFieldDecorator('topic', {
                       initialValue:
-                        editinglecture && editinglecture.en ? editinglecture.en.topic : '',
+                        editinglecture && editinglecture.en && editinglecture.ru
+                          ? language
+                            ? editinglecture.en.topic
+                            : editinglecture.ru.topic
+                          : '',
                     })(
                       <Select
                         id="product-edit-colors"
@@ -366,7 +489,7 @@ class AddLecture extends React.Component {
                   </FormItem>
                 </div>
                 <div className="form-group">
-                  <FormItem label={english ? 'Body_En' : 'Body_Ru'}>
+                  <FormItem label={language ? 'Body_En' : 'Body_Ru'}>
                     {form.getFieldDecorator('content', {
                       initialValue: editorState || '',
                     })(
@@ -389,7 +512,7 @@ class AddLecture extends React.Component {
                               <i
                                 className="fa fa-close closeIcon"
                                 onClick={() => {
-                                  this.delereFile(item)
+                                  this.deleteFile(item)
                                 }}
                               />
                             </li>
@@ -402,9 +525,9 @@ class AddLecture extends React.Component {
                   <FormItem>
                     {form.getFieldDecorator('Files')(
                       <Dragger
+                        showUploadList={false}
                         customRequest={this.dummyRequest}
                         onChange={this.handleFileChange}
-                        beforeUpload={this.beforeUpload}
                       >
                         <p className="ant-upload-drag-icon">
                           <Icon type="inbox" />

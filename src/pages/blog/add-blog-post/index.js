@@ -7,18 +7,12 @@ import styles from './style.module.scss'
 class BlogAddPost extends React.Component {
   constructor(props) {
     super(props)
-    let locale = true
-    if (window.localStorage['app.settings.locale'] === '"ru-RU"') {
-      locale = false
-    }
-
     this.state = {
-      language: locale,
+      language: true,
     }
   }
 
-  handleLanguage = (checked, event) => {
-    console.log('value =====>>>>>', checked, event)
+  handleLanguage = checked => {
     this.setState({
       language: checked,
     })
