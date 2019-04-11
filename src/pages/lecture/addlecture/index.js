@@ -15,7 +15,7 @@ import htmlToDraft from 'html-to-draftjs'
 import { Helmet } from 'react-helmet'
 import styles from './style.module.scss'
 
-const { TabPane } = Tabs.TabPane
+const { TabPane } = Tabs
 const { Option } = Select
 const FormItem = Form.Item
 const { Dragger } = Upload
