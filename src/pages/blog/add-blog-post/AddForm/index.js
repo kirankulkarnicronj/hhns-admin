@@ -308,23 +308,25 @@ class AddForm extends React.Component {
           </FormItem>
         </div>
         <div className="form-group">
-          <ul>
-            {files && files.length > 0
-              ? files.map(item => {
-                  return (
-                    <li className="filesList">
-                      {item}{' '}
-                      <i
-                        className="fa fa-close closeIcon"
-                        onClick={() => {
-                          this.delereFile(item)
-                        }}
-                      />
-                    </li>
-                  )
-                })
-              : null}
-          </ul>
+          <FormItem label="Attachment">
+            <ul>
+              {files && files.length > 0
+                ? files.map(item => {
+                    return (
+                      <li className="filesList">
+                        {item}{' '}
+                        <i
+                          className="fa fa-close closeIcon"
+                          onClick={() => {
+                            this.delereFile(item)
+                          }}
+                        />
+                      </li>
+                    )
+                  })
+                : null}
+            </ul>
+          </FormItem>
         </div>
         <div className="form-group">
           <FormItem>

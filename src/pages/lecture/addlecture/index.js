@@ -6,16 +6,29 @@
 import React from 'react'
 import { Editor } from 'react-draft-wysiwyg'
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css'
-import { Form, Input, Button, Select, Upload, Switch, Icon, notification, Tabs } from 'antd'
+import {
+  Form,
+  Input,
+  Button,
+  Select,
+  Upload,
+  Switch,
+  Icon,
+  notification,
+  Tabs,
+  DatePicker,
+  message,
+} from 'antd'
 import { connect } from 'react-redux'
 import $ from 'jquery'
 import { EditorState, convertToRaw, ContentState } from 'draft-js'
 import draftToHtml from 'draftjs-to-html'
 import htmlToDraft from 'html-to-draftjs'
 import { Helmet } from 'react-helmet'
+import moment from 'moment'
 import styles from './style.module.scss'
 
-const { TabPane } = Tabs.TabPane
+const { TabPane } = Tabs
 const { Option } = Select
 const FormItem = Form.Item
 const { Dragger } = Upload
@@ -26,13 +39,19 @@ class AddLecture extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      files: [],
+      date: new Date(),
+      audioLink: '',
+      transcriptionFiles: [],
+      summaryFiles: [],
       editorState: EditorState.createEmpty(),
       editorStateSummary: EditorState.createEmpty(),
       editorStateTranscription: EditorState.createEmpty(),
       editinglecture: '',
       editedBody: '',
       language: true,
+      audioUploading: false,
+      transcriptionUploading: false,
+      summaryUploading: false,
     }
   }
 
@@ -132,11 +151,14 @@ class AddLecture extends React.Component {
     e.preventDefault()
     const { form, dispatch, router, english } = this.props
     const {
-      files,
+      audioLink,
       editorState,
       editorStateSummary,
       editorStateTranscription,
       editinglecture,
+      transcriptionFiles,
+      summaryFiles,
+      date,
     } = this.state
     const { location } = router
     const uuid = location.state
@@ -163,6 +185,9 @@ class AddLecture extends React.Component {
       chapter,
       author,
       tags: tag,
+      created_date: date,
+      audio_link: audioLink,
+      translation_required: true,
       counters: {
         ru_summary_view: 0,
         ru_transcription_view: 0,
@@ -181,11 +206,11 @@ class AddLecture extends React.Component {
         summary: {
           attachment_link: '',
           attachment_name: '',
-          text: editorSummary,
+          text: '',
         },
         transcription: {
           attachment_name: '',
-          attachment_link: '',
+          attachment_link: transcriptionFiles,
           text: editorTranscription,
         },
       },
@@ -196,16 +221,18 @@ class AddLecture extends React.Component {
         title,
         summary: {
           attachment_link: '',
-          attachment_name: '',
+          attachment_name: summaryFiles,
           text: editorSummary,
         },
         transcription: {
           attachment_name: '',
           attachment_link: '',
-          text: editorTranscription,
+          text: '',
         },
       },
     }
+    console.log('bosy ====>>>>', body)
+
     if (editinglecture !== '') {
       const payload = {
         body,
@@ -248,9 +275,42 @@ class AddLecture extends React.Component {
   }
 
   handleFileChange = info => {
-    if (info.file.status === 'done') {
-      this.uploads3(info.file)
-    }
+    this.setState(
+      {
+        audioUploading: true,
+      },
+      () => {
+        if (info.file.status === 'done') {
+          this.uploads3(info.file)
+        }
+      },
+    )
+  }
+
+  handleSummaryFileChange = info => {
+    this.setState(
+      {
+        summaryUploading: true,
+      },
+      () => {
+        if (info.file.status === 'done') {
+          this.uploads3(info.file)
+        }
+      },
+    )
+  }
+
+  handleTranscriptionFileChange = info => {
+    this.setState(
+      {
+        transcriptionUploading: true,
+      },
+      () => {
+        if (info.file.status === 'done') {
+          this.uploads3(info.file)
+        }
+      },
+    )
   }
 
   uploads3 = file => {
@@ -262,11 +322,7 @@ class AddLecture extends React.Component {
       success: data => {
         const temp = data.presignedUrl.toString()
         const finalUrl = temp.substr(0, temp.lastIndexOf('?'))
-        const { files } = this.state
-        const array = [...files]
-
-        array.push(finalUrl)
-        this.setState({ files: array })
+        this.setUploadedFiles(finalUrl)
         this.uploadFileToS3UsingPresignedUrl(data.presignedUrl, file)
       },
       error() {
@@ -303,13 +359,49 @@ class AddLecture extends React.Component {
     })
   }
 
+  setUploadedFiles = finalUrl => {
+    const {
+      transcriptionFiles,
+      summaryFiles,
+      audioUploading,
+      transcriptionUploading,
+      summaryUploading,
+    } = this.state
+    if (audioUploading) {
+      this.setState({
+        audioLink: finalUrl,
+        transcriptionUploading: false,
+        summaryUploading: false,
+        audioUploading: false,
+      })
+    } else if (transcriptionUploading) {
+      const array = [...transcriptionFiles]
+      array.push(finalUrl)
+      this.setState({
+        transcriptionFiles: array,
+        transcriptionUploading: false,
+        summaryUploading: false,
+        audioUploading: false,
+      })
+    } else if (summaryUploading) {
+      const newArray = [...summaryFiles]
+      newArray.push(finalUrl)
+      this.setState({
+        summaryFiles: newArray,
+        transcriptionUploading: false,
+        summaryUploading: false,
+        audioUploading: false,
+      })
+    }
+  }
+
   dummyRequest = ({ file, onSuccess }) => {
     setTimeout(() => {
       onSuccess('ok')
     }, 0)
   }
 
-  deleteFile = item => {
+  deleteFile = (item, type) => {
     const fileName = item.substr(item.lastIndexOf('.com/') + 5)
     $.ajax({
       type: 'GET',
@@ -319,19 +411,7 @@ class AddLecture extends React.Component {
           message: 'File Deleted',
           description: 'File has been successfully deleted',
         })
-
-        const { files } = this.state
-
-        for (let i = 0; i < files.length; i += 1) {
-          if (files[i] === item) {
-            files.splice(i, 1)
-            break
-          }
-        }
-
-        this.setState({
-          files,
-        })
+        this.handelDeleteSetFiles(item, type)
       },
       error() {
         notification.error({
@@ -342,12 +422,65 @@ class AddLecture extends React.Component {
     })
   }
 
+  handelDeleteSetFiles = (item, type) => {
+    console.log('delete ===>>>', item, type)
+    const { transcriptionFiles, summaryFiles } = this.state
+    if (type === 'audio') {
+      this.setState({ audioLink: '' })
+    }
+    if (type === 'transcription') {
+      for (let i = 0; i < transcriptionFiles.length; i += 1) {
+        if (transcriptionFiles[i] === item) {
+          transcriptionFiles.splice(i, 1)
+          break
+        }
+      }
+      this.setState({
+        transcriptionFiles,
+      })
+    }
+    if (type === 'summary') {
+      for (let i = 0; i < summaryFiles.length; i += 1) {
+        if (summaryFiles[i] === item) {
+          summaryFiles.splice(i, 1)
+          break
+        }
+      }
+      this.setState({
+        summaryFiles,
+      })
+    }
+  }
+
+  beforeUploadAudio = file => {
+    const isJPG = file.type === 'audio/mp3'
+    if (!isJPG) {
+      message.error('You can only upload MP3 file!')
+    }
+    return isJPG
+  }
+
   handleReset = () => {
     const { form } = this.props
     form.resetFields()
     this.setState({
-      editorState: '',
       editinglecture: '',
+      audioLink: '',
+      editorState: EditorState.createEmpty(),
+      editorStateSummary: EditorState.createEmpty(),
+      editorStateTranscription: EditorState.createEmpty(),
+      transcriptionUploading: false,
+      summaryUploading: false,
+      audioUploading: false,
+      transcriptionFiles: [],
+      summaryFiles: [],
+    })
+  }
+
+  onChange = (date, dateString) => {
+    console.log(date, dateString)
+    this.setState({
+      date: dateString,
     })
   }
 
@@ -355,6 +488,7 @@ class AddLecture extends React.Component {
     const { form, english, lecture } = this.props
     const { topics, events, locations } = lecture
     const {
+      date,
       editinglecture,
       editedBody,
       editorState,
@@ -362,229 +496,320 @@ class AddLecture extends React.Component {
       files,
       editorStateSummary,
       editorStateTranscription,
+      audioLink,
+      transcriptionFiles,
+      summaryFiles,
     } = this.state
-
+    const dateFormat = 'YYYY/MM/DD'
     return (
-      <Tabs defaultActiveKey="1">
-        <TabPane tab="Lecture" key="1">
+      <React.Fragment>
+        <div>
           <div>
-            <Helmet title="Add Blog Post" />
-            <section className="card">
-              <div className="card-header mb-2">
-                <div className="utils__title">
-                  <strong>Lecture Add/Edit</strong>
-                  <Switch
-                    defaultChecked
-                    checkedChildren={language ? 'en' : 'ru'}
-                    unCheckedChildren={language ? 'en' : 'ru'}
-                    onChange={this.handleLanguage}
-                    className="toggle"
-                    style={{ width: '100px', marginLeft: '10px' }}
-                  />
+            <strong>Title :</strong>
+            &nbsp;&nbsp;
+            <span>January 18, 2019 - Baltics Festival - Fifth Offense</span>
+          </div>
+        </div>
+        <Tabs defaultActiveKey="1">
+          <TabPane tab="Lecture" key="1">
+            <div>
+              <Helmet title="Add Blog Post" />
+              <section className="card">
+                <div className="card-header mb-2">
+                  <div className="utils__title">
+                    <strong>Lecture Add/Edit</strong>
+                    <Switch
+                      defaultChecked
+                      checkedChildren={language ? 'en' : 'ru'}
+                      unCheckedChildren={language ? 'en' : 'ru'}
+                      onChange={this.handleLanguage}
+                      className="toggle"
+                      style={{ width: '100px', marginLeft: '10px' }}
+                    />
+                  </div>
                 </div>
-              </div>
+                <div className="card-body">
+                  <div className={styles.addPost}>
+                    <Form className="mt-3">
+                      <div className="form-group">
+                        <FormItem label={language ? 'Title' : 'Title'}>
+                          {form.getFieldDecorator('title', {
+                            initialValue:
+                              editinglecture && editinglecture.en && editinglecture.ru
+                                ? language
+                                  ? editinglecture.en.title
+                                  : editinglecture.ru.title
+                                : '',
+                          })(<Input placeholder="Post title" />)}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem label="Author">
+                          {form.getFieldDecorator('author', {
+                            initialValue: editinglecture ? editinglecture.author : '',
+                          })(
+                            <Select
+                              id="product-edit-colors"
+                              showSearch
+                              style={{ width: '100%' }}
+                              placeholder="Select Author"
+                              optionFilterProp="children"
+                              filterOption={(input, option) =>
+                                option.props.children.toLowerCase().indexOf(input.toLowerCase()) >=
+                                0
+                              }
+                            >
+                              <Option value="english">Niranjana Swami</Option>
+                              <Option value="russian">Other</Option>
+                            </Select>,
+                          )}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem label="Language">
+                          {form.getFieldDecorator('language', {
+                            initialValue: editinglecture ? editinglecture.language : '',
+                          })(
+                            <Select
+                              id="product-edit-colors"
+                              showSearch
+                              style={{ width: '100%' }}
+                              placeholder="Select a color"
+                              optionFilterProp="children"
+                              filterOption={(input, option) =>
+                                option.props.children.toLowerCase().indexOf(input.toLowerCase()) >=
+                                0
+                              }
+                            >
+                              <Option value="english">English</Option>
+                              <Option value="russian">Russian</Option>
+                            </Select>,
+                          )}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem label="date">
+                          {form.getFieldDecorator('date', {
+                            initialValue: moment(date, dateFormat),
+                          })(<DatePicker onChange={this.onChange} />)}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem label={language ? 'Location' : 'Location'}>
+                          {form.getFieldDecorator('location', {
+                            initialValue:
+                              editinglecture && editinglecture.en && editinglecture.ru
+                                ? language
+                                  ? editinglecture.en.location
+                                  : editinglecture.ru.location
+                                : '',
+                          })(
+                            <Select
+                              id="product-edit-colors"
+                              showSearch
+                              style={{ width: '100%' }}
+                              placeholder="Select Location"
+                              optionFilterProp="children"
+                              filterOption={(input, option) =>
+                                option.props.children.toLowerCase().indexOf(input.toLowerCase()) >=
+                                0
+                              }
+                            >
+                              {locations && locations.length > 0
+                                ? locations.map(item => {
+                                    return (
+                                      <Option key={item._id} value={item.title}>
+                                        {item.title}
+                                      </Option>
+                                    )
+                                  })
+                                : null}
+                            </Select>,
+                          )}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem label={language ? 'Event' : 'Event'}>
+                          {form.getFieldDecorator('event', {
+                            initialValue:
+                              editinglecture && editinglecture.en && editinglecture.ru
+                                ? language
+                                  ? editinglecture.en.event
+                                  : editinglecture.ru.event
+                                : '',
+                          })(
+                            <Select
+                              id="product-edit-colors"
+                              showSearch
+                              style={{ width: '100%' }}
+                              placeholder="Select Event"
+                              optionFilterProp="children"
+                              filterOption={(input, option) =>
+                                option.props.children.toLowerCase().indexOf(input.toLowerCase()) >=
+                                0
+                              }
+                            >
+                              {events && events.length > 0
+                                ? events.map(item => {
+                                    return (
+                                      <Option key={item._id} value={item.title}>
+                                        {item.title}
+                                      </Option>
+                                    )
+                                  })
+                                : null}
+                            </Select>,
+                          )}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem label={language ? 'Topic' : 'Topic'}>
+                          {form.getFieldDecorator('topic', {
+                            initialValue:
+                              editinglecture && editinglecture.en && editinglecture.ru
+                                ? language
+                                  ? editinglecture.en.topic
+                                  : editinglecture.ru.topic
+                                : '',
+                          })(
+                            <Select
+                              id="product-edit-colors"
+                              showSearch
+                              style={{ width: '100%' }}
+                              placeholder="Select Topic"
+                              optionFilterProp="children"
+                              filterOption={(input, option) =>
+                                option.props.children.toLowerCase().indexOf(input.toLowerCase()) >=
+                                0
+                              }
+                            >
+                              {topics && topics.length > 0
+                                ? topics.map(item => {
+                                    return (
+                                      <Option key={item._id} value={item.title}>
+                                        {item.title}
+                                      </Option>
+                                    )
+                                  })
+                                : null}
+                            </Select>,
+                          )}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem label="Parts">
+                          {form.getFieldDecorator('parts', {
+                            initialValue: editinglecture ? editinglecture.parts : '',
+                          })(<Input type="Number" placeholder="parts/songs" />)}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem label="Chapter">
+                          {form.getFieldDecorator('chapter', {
+                            initialValue: editinglecture ? editinglecture.chapter : '',
+                          })(<Input type="Number" placeholder="Chapter" />)}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem label="Verse">
+                          {form.getFieldDecorator('verse', {
+                            initialValue: editinglecture ? editinglecture.verse : '',
+                          })(<Input type="Number" placeholder="Verse/Text" />)}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem label={language ? 'Body' : 'Body'}>
+                          {form.getFieldDecorator('content', {
+                            initialValue: editorState || '',
+                          })(
+                            <div className={styles.editor}>
+                              <Editor
+                                editorState={editorState}
+                                onEditorStateChange={this.onEditorStateChange}
+                              />
+                            </div>,
+                          )}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem label="Attachment">
+                          {audioLink ? (
+                            <ul>
+                              <li className="filesList">
+                                {audioLink}
+                                <i
+                                  className="fa fa-close closeIcon"
+                                  onClick={() => {
+                                    this.deleteFile(audioLink, 'audio')
+                                  }}
+                                />
+                              </li>
+                            </ul>
+                          ) : (
+                            ''
+                          )}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem>
+                          {form.getFieldDecorator('Files')(
+                            <Dragger
+                              beforeUpload={this.beforeUploadAudio}
+                              multiple={false}
+                              showUploadList={false}
+                              customRequest={this.dummyRequest}
+                              onChange={this.handleFileChange}
+                            >
+                              <p className="ant-upload-drag-icon">
+                                <Icon type="inbox" />
+                              </p>
+                              <p className="ant-upload-text">
+                                Click or drag file to this area to upload
+                              </p>
+                              <p className="ant-upload-hint">
+                                Support for a single or bulk upload. Strictly prohibit from
+                                uploading company data or other band files
+                              </p>
+                            </Dragger>,
+                          )}
+                        </FormItem>
+                      </div>
+                    </Form>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </TabPane>
+          <TabPane tab="Summary" key="2">
+            <section className="card">
               <div className="card-body">
-                <div className={styles.addPost}>
-                  <Form className="mt-3">
-                    <div className="form-group">
-                      <FormItem label={language ? 'Title_En' : 'Title_Ru'}>
-                        {form.getFieldDecorator('title', {
-                          initialValue:
-                            editinglecture && editinglecture.en && editinglecture.ru
-                              ? language
-                                ? editinglecture.en.title
-                                : editinglecture.ru.title
-                              : '',
-                        })(<Input placeholder="Post title" />)}
-                      </FormItem>
-                    </div>
-                    <div className="form-group">
-                      <FormItem label="Author">
-                        {form.getFieldDecorator('author', {
-                          initialValue: editinglecture ? editinglecture.author : '',
-                        })(
-                          <Select
-                            id="product-edit-colors"
-                            showSearch
-                            style={{ width: '100%' }}
-                            placeholder="Select Author"
-                            optionFilterProp="children"
-                            filterOption={(input, option) =>
-                              option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                            }
-                          >
-                            <Option value="english">Niranjana Swami</Option>
-                            <Option value="russian">Other</Option>
-                          </Select>,
-                        )}
-                      </FormItem>
-                    </div>
-                    <div className="form-group">
-                      <FormItem label="Language">
-                        {form.getFieldDecorator('language', {
-                          initialValue: editinglecture ? editinglecture.language : '',
-                        })(
-                          <Select
-                            id="product-edit-colors"
-                            showSearch
-                            style={{ width: '100%' }}
-                            placeholder="Select a color"
-                            optionFilterProp="children"
-                            filterOption={(input, option) =>
-                              option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                            }
-                          >
-                            <Option value="english">English</Option>
-                            <Option value="russian">Russian</Option>
-                          </Select>,
-                        )}
-                      </FormItem>
-                    </div>
-                    <div className="form-group">
-                      <FormItem label={language ? 'Location_En' : 'Location_Ru'}>
-                        {form.getFieldDecorator('location', {
-                          initialValue:
-                            editinglecture && editinglecture.en && editinglecture.ru
-                              ? language
-                                ? editinglecture.en.location
-                                : editinglecture.ru.location
-                              : '',
-                        })(
-                          <Select
-                            id="product-edit-colors"
-                            showSearch
-                            style={{ width: '100%' }}
-                            placeholder="Select Location"
-                            optionFilterProp="children"
-                            filterOption={(input, option) =>
-                              option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                            }
-                          >
-                            {locations && locations.length > 0
-                              ? locations.map(item => {
-                                  return (
-                                    <Option key={item._id} value={item.title}>
-                                      {item.title}
-                                    </Option>
-                                  )
-                                })
-                              : null}
-                          </Select>,
-                        )}
-                      </FormItem>
-                    </div>
-                    <div className="form-group">
-                      <FormItem label={language ? 'Event_En' : 'Event_Ru'}>
-                        {form.getFieldDecorator('event', {
-                          initialValue:
-                            editinglecture && editinglecture.en && editinglecture.ru
-                              ? language
-                                ? editinglecture.en.event
-                                : editinglecture.ru.event
-                              : '',
-                        })(
-                          <Select
-                            id="product-edit-colors"
-                            showSearch
-                            style={{ width: '100%' }}
-                            placeholder="Select Event"
-                            optionFilterProp="children"
-                            filterOption={(input, option) =>
-                              option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                            }
-                          >
-                            {events && events.length > 0
-                              ? events.map(item => {
-                                  return (
-                                    <Option key={item._id} value={item.title}>
-                                      {item.title}
-                                    </Option>
-                                  )
-                                })
-                              : null}
-                          </Select>,
-                        )}
-                      </FormItem>
-                    </div>
-                    <div className="form-group">
-                      <FormItem label={language ? 'Topic_En' : 'Topic_Ru'}>
-                        {form.getFieldDecorator('topic', {
-                          initialValue:
-                            editinglecture && editinglecture.en && editinglecture.ru
-                              ? language
-                                ? editinglecture.en.topic
-                                : editinglecture.ru.topic
-                              : '',
-                        })(
-                          <Select
-                            id="product-edit-colors"
-                            showSearch
-                            style={{ width: '100%' }}
-                            placeholder="Select Topic"
-                            optionFilterProp="children"
-                            filterOption={(input, option) =>
-                              option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                            }
-                          >
-                            {topics && topics.length > 0
-                              ? topics.map(item => {
-                                  return (
-                                    <Option key={item._id} value={item.title}>
-                                      {item.title}
-                                    </Option>
-                                  )
-                                })
-                              : null}
-                          </Select>,
-                        )}
-                      </FormItem>
-                    </div>
-                    <div className="form-group">
-                      <FormItem label="part">
-                        {form.getFieldDecorator('parts', {
-                          initialValue: editinglecture ? editinglecture.parts : '',
-                        })(<Input placeholder="parts/songs" />)}
-                      </FormItem>
-                    </div>
-                    <div className="form-group">
-                      <FormItem label="chapter">
-                        {form.getFieldDecorator('chapter', {
-                          initialValue: editinglecture ? editinglecture.chapter : '',
-                        })(<Input placeholder="Chapter" />)}
-                      </FormItem>
-                    </div>
-                    <div className="form-group">
-                      <FormItem label="varse">
-                        {form.getFieldDecorator('verse', {
-                          initialValue: editinglecture ? editinglecture.verse : '',
-                        })(<Input placeholder="Verse/Text" />)}
-                      </FormItem>
-                    </div>
-                    <div className="form-group">
-                      <FormItem label={language ? 'Body_En' : 'Body_Ru'}>
-                        {form.getFieldDecorator('content', {
-                          initialValue: editorState || '',
-                        })(
-                          <div className={styles.editor}>
-                            <Editor
-                              editorState={editorState}
-                              onEditorStateChange={this.onEditorStateChange}
-                            />
-                          </div>,
-                        )}
-                      </FormItem>
-                    </div>
-                    <div className="form-group">
+                <Form className="mt-3">
+                  <div className="form-group">
+                    <FormItem label={language ? 'Summary' : 'Summary'}>
+                      {form.getFieldDecorator('summary', {
+                        initialValue: editorStateSummary,
+                      })(
+                        <div className={styles.editor} style={{ backgroundColor: '#fff' }}>
+                          <Editor
+                            editorState={editorStateSummary}
+                            onEditorStateChange={this.onEditorChangeStateSummary}
+                          />
+                        </div>,
+                      )}
+                    </FormItem>
+                  </div>
+                  <div className="form-group">
+                    <FormItem label="Attachment">
                       <ul>
-                        {files && files.length > 0
-                          ? files.map(item => {
+                        {summaryFiles && summaryFiles.length > 0
+                          ? summaryFiles.map(item => {
                               return (
                                 <li className="filesList">
                                   {item}{' '}
                                   <i
                                     className="fa fa-close closeIcon"
                                     onClick={() => {
-                                      this.deleteFile(item)
+                                      this.deleteFile(item, 'summary')
                                     }}
                                   />
                                 </li>
@@ -592,83 +817,108 @@ class AddLecture extends React.Component {
                             })
                           : null}
                       </ul>
-                    </div>
-                    <div className="form-group">
-                      <FormItem>
-                        {form.getFieldDecorator('Files')(
-                          <Dragger
-                            showUploadList={false}
-                            customRequest={this.dummyRequest}
-                            onChange={this.handleFileChange}
-                          >
-                            <p className="ant-upload-drag-icon">
-                              <Icon type="inbox" />
-                            </p>
-                            <p className="ant-upload-text">
-                              Click or drag file to this area to upload
-                            </p>
-                            <p className="ant-upload-hint">
-                              Support for a single or bulk upload. Strictly prohibit from uploading
-                              company data or other band files
-                            </p>
-                          </Dragger>,
-                        )}
-                      </FormItem>
-                    </div>
-                    <FormItem>
-                      <div className={styles.submit}>
-                        <span className="mr-3">
-                          <Button type="primary" onClick={this.handleFormBody}>
-                            Save and Post
-                          </Button>
-                        </span>
-                        <Button type="danger" onClick={this.handleReset}>
-                          Discard
-                        </Button>
-                      </div>
                     </FormItem>
-                  </Form>
+                  </div>
+                  <div className="form-group">
+                    <FormItem>
+                      {form.getFieldDecorator('Files1')(
+                        <Dragger
+                          showUploadList={false}
+                          customRequest={this.dummyRequest}
+                          onChange={this.handleSummaryFileChange}
+                        >
+                          <p className="ant-upload-drag-icon">
+                            <Icon type="inbox" />
+                          </p>
+                          <p className="ant-upload-text">
+                            Click or drag file to this area to upload
+                          </p>
+                          <p className="ant-upload-hint">
+                            Support for a single or bulk upload. Strictly prohibit from uploading
+                            company data or other band files
+                          </p>
+                        </Dragger>,
+                      )}
+                    </FormItem>
+                  </div>
+                </Form>
+              </div>
+            </section>
+          </TabPane>
+          <TabPane tab="Transcription" key="3">
+            <section className="card">
+              <div className="card-body">
+                {' '}
+                <div className="form-group">
+                  <FormItem label={language ? 'Transcription' : 'Transcription'}>
+                    {form.getFieldDecorator('transcription', {
+                      initialValue: editorStateTranscription,
+                    })(
+                      <div className={styles.editor} style={{ backgroundColor: '#fff' }}>
+                        <Editor
+                          editorState={editorStateTranscription}
+                          onEditorStateChange={this.onEditorChangeStateTranscription}
+                        />
+                      </div>,
+                    )}
+                  </FormItem>
+                </div>
+                <div className="form-group">
+                  <FormItem label="Attachment">
+                    <ul>
+                      {transcriptionFiles && transcriptionFiles.length > 0
+                        ? transcriptionFiles.map(item => {
+                            return (
+                              <li className="filesList">
+                                {item}{' '}
+                                <i
+                                  className="fa fa-close closeIcon"
+                                  onClick={() => {
+                                    this.deleteFile(item, 'transcription')
+                                  }}
+                                />
+                              </li>
+                            )
+                          })
+                        : null}
+                    </ul>
+                  </FormItem>
+                </div>
+                <div className="form-group">
+                  <FormItem>
+                    {form.getFieldDecorator('Files2')(
+                      <Dragger
+                        showUploadList={false}
+                        customRequest={this.dummyRequest}
+                        onChange={this.handleTranscriptionFileChange}
+                      >
+                        <p className="ant-upload-drag-icon">
+                          <Icon type="inbox" />
+                        </p>
+                        <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                        <p className="ant-upload-hint">
+                          Support for a single or bulk upload. Strictly prohibit from uploading
+                          company data or other band files
+                        </p>
+                      </Dragger>,
+                    )}
+                  </FormItem>
                 </div>
               </div>
             </section>
-          </div>
-        </TabPane>
-        <TabPane tab="Summary" key="2">
-          <Form className="mt-3">
-            <div className="form-group">
-              <FormItem label={language ? 'Summary_En' : 'Summary_Ru'}>
-                {form.getFieldDecorator('summary', {
-                  initialValue: editorStateSummary,
-                })(
-                  <div className={styles.editor}>
-                    <Editor
-                      editorState={editorStateSummary}
-                      onEditorStateChange={this.onEditorChangeStateSummary}
-                    />
-                  </div>,
-                )}
-              </FormItem>
-            </div>
-          </Form>
-        </TabPane>
-        <TabPane tab="Transcription" key="3">
-          {' '}
-          <div className="form-group">
-            <FormItem label={language ? 'Transcription_En' : 'Transcription_Ru'}>
-              {form.getFieldDecorator('transcription', {
-                initialValue: editorStateTranscription,
-              })(
-                <div className={styles.editor}>
-                  <Editor
-                    editorState={editorStateTranscription}
-                    onEditorStateChange={this.onEditorChangeStateTranscription}
-                  />
-                </div>,
-              )}
-            </FormItem>
-          </div>
-        </TabPane>
-      </Tabs>
+          </TabPane>
+        </Tabs>
+        <div className={styles.submit}>
+          <span className="mr-3">
+            <Button type="primary" onClick={this.handleFormBody}>
+              Save and Post
+            </Button>
+          </span>
+          <Button type="danger" onClick={this.handleReset}>
+            Discard
+          </Button>
+        </div>
+      </React.Fragment>
     )
   }
 }
