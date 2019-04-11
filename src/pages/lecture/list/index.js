@@ -1,10 +1,12 @@
 import React from 'react'
-import { Table, Button } from 'antd'
+import { Table, Button, DatePicker, Select } from 'antd'
 import { Helmet } from 'react-helmet'
 // import styles from './style.module.scss'
 import { connect } from 'react-redux'
 import renderHTML from 'react-render-html'
 import { Link } from 'react-router-dom'
+
+const { Option } = Select
 
 @connect(({ lecture }) => ({ lecture }))
 class ProductsList extends React.Component {
@@ -53,6 +55,24 @@ class ProductsList extends React.Component {
     dispatch({
       type: 'lecture/DELETE_LECTURE',
       uuid,
+    })
+  }
+
+  onChangeDate = date => {
+    const { dispatch } = this.props
+    dispatch({
+      type: 'lecture/GET_LECTURES',
+      page: 1,
+      date: date ? date.format('YYYY-MM-DD') : null,
+    })
+  }
+
+  onChangeDateSort = order => {
+    const { dispatch } = this.props
+    dispatch({
+      type: 'lecture/GET_LECTURES',
+      page: 1,
+      createdDateSort: order,
     })
   }
 
@@ -122,6 +142,22 @@ class ProductsList extends React.Component {
             <div className="utils__title">
               <strong>Lecture List</strong>
             </div>
+            <DatePicker onChange={this.onChangeDate} />
+            <Select
+              id="product-edit-colors"
+              showSearch
+              style={{ width: '20%' }}
+              onChange={this.onChangeDateSort}
+              placeholder="Select Order"
+              optionFilterProp="children"
+              filterOption={(input, option) =>
+                option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }
+            >
+              <Option value="asc">Ascending</Option>
+              <Option value="desc">Descending</Option>
+            </Select>
+            ,
           </div>
           <div className="card-body">
             <Table

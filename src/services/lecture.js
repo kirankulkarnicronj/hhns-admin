@@ -1,9 +1,17 @@
 import axios from 'axios'
 import serverAddress from './config'
+/* eslint-disable */
 
-export async function getLectureList(page) {
+export async function getLectureList(page, date, createdDateSort) {
   const pageNumber = page || 1
-  const url = `${serverAddress}/api/lecture/?page=${pageNumber}`
+  const dateNow = date || null
+  const createdDateSorting = createdDateSort || null
+  const url =
+    serverAddress +
+    '/api/lecture?page=' +
+    pageNumber +
+    (dateNow ? '&date=' + date : '') +
+    (createdDateSorting ? '&createdDateSort=' + createdDateSorting : '')
   return axios
     .get(url)
     .then(response => {
