@@ -1,3 +1,5 @@
+/* eslint-disable consistent-return */
+/* eslint-disable array-callback-return */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
@@ -9,6 +11,7 @@ import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css'
 import {
   Form,
   Input,
+  Checkbox,
   Button,
   Select,
   Upload,
@@ -17,7 +20,6 @@ import {
   notification,
   Tabs,
   DatePicker,
-  message,
 } from 'antd'
 import { connect } from 'react-redux'
 import $ from 'jquery'
@@ -52,6 +54,7 @@ class AddLecture extends React.Component {
       audioUploading: false,
       transcriptionUploading: false,
       summaryUploading: false,
+      translationRequired: false,
     }
   }
 
@@ -81,16 +84,17 @@ class AddLecture extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.lecture.editLecture !== '') {
-      const { lecture, language } = nextProps
+      const { lecture } = nextProps
+      const { language } = this.state
       this.setState({
         editinglecture: lecture.editLecture,
+        audioLink: lecture.editLecture.audio_link,
+        summaryFiles: lecture.editLecture.ru.summary.attachment_link,
+        transcriptionFiles: lecture.editLecture.en.transcription.attachment_link,
+        translationRequired: lecture.editLecture.translation_required,
       })
 
-      const htmlTranscription = lecture.editLecture
-        ? language
-          ? lecture.editLecture.en.transcription.text
-          : lecture.editLecture.ru.transcription.text
-        : ''
+      const htmlTranscription = lecture.editLecture ? lecture.editLecture.en.transcription.text : ''
       let editorStateTranscription = ''
       if (htmlTranscription.length > 0) {
         const contentBlock = htmlToDraft(htmlTranscription)
@@ -99,11 +103,7 @@ class AddLecture extends React.Component {
           editorStateTranscription = EditorState.createWithContent(contentState)
         }
 
-        const htmlSummary = lecture.editLecture
-          ? language
-            ? lecture.editLecture.en.summary.text
-            : lecture.editLecture.ru.summary.text
-          : ''
+        const htmlSummary = lecture.editLecture ? lecture.editLecture.ru.summary.text : ''
         let editorStateSummary = ''
         if (htmlSummary.length > 0) {
           const contentBlockSummary = htmlToDraft(htmlSummary)
@@ -120,6 +120,9 @@ class AddLecture extends React.Component {
           })
         }
       }
+    }
+    if (nextProps.lecture.isLectureCreated) {
+      this.handleReset()
     }
   }
 
@@ -158,13 +161,15 @@ class AddLecture extends React.Component {
       editinglecture,
       transcriptionFiles,
       summaryFiles,
-      date,
+      translationRequired,
+      language,
     } = this.state
     const { location } = router
     const uuid = location.state
     const title = form.getFieldValue('title')
+    const date = form.getFieldValue('date')
     const tag = form.getFieldValue('tag')
-    const language = form.getFieldValue('language')
+    // const language = form.getFieldValue('language')
     const bodylecture = draftToHtml(convertToRaw(editorState.getCurrentContent()))
     const author = form.getFieldValue('author')
     const locationlecture = form.getFieldValue('location')
@@ -187,7 +192,7 @@ class AddLecture extends React.Component {
       tags: tag,
       created_date: date,
       audio_link: audioLink,
-      translation_required: true,
+      translation_required: translationRequired,
       counters: {
         ru_summary_view: 0,
         ru_transcription_view: 0,
@@ -202,7 +207,7 @@ class AddLecture extends React.Component {
         location: locationlecture,
         topic,
         event,
-        title,
+        title: language ? title : editinglecture.en.title,
         summary: {
           attachment_link: '',
           attachment_name: '',
@@ -218,10 +223,10 @@ class AddLecture extends React.Component {
         location: locationlecture,
         topic,
         event,
-        title,
+        title: language ? editinglecture.ru.title : title,
         summary: {
-          attachment_link: '',
-          attachment_name: summaryFiles,
+          attachment_link: summaryFiles,
+          attachment_name: '',
           text: editorSummary,
         },
         transcription: {
@@ -231,8 +236,6 @@ class AddLecture extends React.Component {
         },
       },
     }
-    console.log('bosy ====>>>>', body)
-
     if (editinglecture !== '') {
       const payload = {
         body,
@@ -275,42 +278,36 @@ class AddLecture extends React.Component {
   }
 
   handleFileChange = info => {
-    this.setState(
-      {
-        audioUploading: true,
-      },
-      () => {
-        if (info.file.status === 'done') {
-          this.uploads3(info.file)
-        }
-      },
-    )
+    this.setState({
+      audioUploading: true,
+    })
+    this.handleUploading(info)
   }
 
   handleSummaryFileChange = info => {
-    this.setState(
-      {
-        summaryUploading: true,
-      },
-      () => {
-        if (info.file.status === 'done') {
-          this.uploads3(info.file)
-        }
-      },
-    )
+    this.setState({
+      summaryUploading: true,
+    })
+    this.handleUploading(info)
   }
 
   handleTranscriptionFileChange = info => {
-    this.setState(
-      {
-        transcriptionUploading: true,
-      },
-      () => {
-        if (info.file.status === 'done') {
-          this.uploads3(info.file)
-        }
-      },
-    )
+    this.setState({
+      transcriptionUploading: true,
+    })
+    this.handleUploading(info)
+  }
+
+  handleUploading = info => {
+    if (info.file.status === 'uploading') {
+      notification.success({
+        message: 'Uploading Started',
+        description: 'File uploading is started',
+      })
+    }
+    if (info.file.status === 'done') {
+      this.uploads3(info.file)
+    }
   }
 
   uploads3 = file => {
@@ -327,8 +324,8 @@ class AddLecture extends React.Component {
       },
       error() {
         notification.error({
-          message: 'shalu',
-          description: 'Error occured during uploading, Please try again',
+          message: 'Error',
+          description: 'Error occured during uploading, try again',
         })
       },
     })
@@ -353,7 +350,7 @@ class AddLecture extends React.Component {
       error() {
         notification.warning({
           message: 'error',
-          description: 'Error occured during uploading, Please try again',
+          description: 'Error occured during uploading, try again',
         })
       },
     })
@@ -416,14 +413,13 @@ class AddLecture extends React.Component {
       error() {
         notification.error({
           message: 'error',
-          description: 'Error occured during uploading, Please try again',
+          description: 'Error occured during uploading, try again',
         })
       },
     })
   }
 
   handelDeleteSetFiles = (item, type) => {
-    console.log('delete ===>>>', item, type)
     const { transcriptionFiles, summaryFiles } = this.state
     if (type === 'audio') {
       this.setState({ audioLink: '' })
@@ -455,7 +451,21 @@ class AddLecture extends React.Component {
   beforeUploadAudio = file => {
     const isJPG = file.type === 'audio/mp3'
     if (!isJPG) {
-      message.error('You can only upload MP3 file!')
+      notification.error({
+        message: 'error',
+        description: 'You can only upload MP3 file!',
+      })
+    }
+    return isJPG
+  }
+
+  beforeUpload = file => {
+    const isJPG = file.type === 'application/pdf'
+    if (!isJPG) {
+      notification.error({
+        message: 'error',
+        description: 'You can only upload Pdf file!',
+      })
     }
     return isJPG
   }
@@ -474,6 +484,8 @@ class AddLecture extends React.Component {
       audioUploading: false,
       transcriptionFiles: [],
       summaryFiles: [],
+      language: true,
+      translationRequired: false,
     })
   }
 
@@ -482,6 +494,14 @@ class AddLecture extends React.Component {
     this.setState({
       date: dateString,
     })
+  }
+
+  handleCheckbox = event => {
+    setTimeout(() => {
+      this.setState({
+        translationRequired: event.target.checked,
+      })
+    }, 0)
   }
 
   render() {
@@ -499,17 +519,20 @@ class AddLecture extends React.Component {
       audioLink,
       transcriptionFiles,
       summaryFiles,
+      translationRequired,
     } = this.state
     const dateFormat = 'YYYY/MM/DD'
     return (
       <React.Fragment>
-        <div>
+        {editinglecture && editinglecture.en && editinglecture.ru ? (
           <div>
-            <strong>Title :</strong>
-            &nbsp;&nbsp;
-            <span>January 18, 2019 - Baltics Festival - Fifth Offense</span>
+            <div>
+              <strong>Title :</strong>
+              &nbsp;&nbsp;
+              <span>{language ? editinglecture.en.title : editinglecture.ru.title}</span>
+            </div>
           </div>
-        </div>
+        ) : null}
         <Tabs defaultActiveKey="1">
           <TabPane tab="Lecture" key="1">
             <div>
@@ -588,10 +611,23 @@ class AddLecture extends React.Component {
                         </FormItem>
                       </div>
                       <div className="form-group">
-                        <FormItem label="date">
+                        <FormItem label="Date">
                           {form.getFieldDecorator('date', {
-                            initialValue: moment(date, dateFormat),
+                            initialValue: editinglecture
+                              ? moment(editinglecture.created_date, dateFormat)
+                              : '',
                           })(<DatePicker onChange={this.onChange} />)}
+                        </FormItem>
+                      </div>
+                      <div className="form-group">
+                        <FormItem>
+                          {form.getFieldDecorator('translation', {
+                            initialValue: translationRequired,
+                          })(
+                            <Checkbox checked={translationRequired} onChange={this.handleCheckbox}>
+                              Need Translation ?
+                            </Checkbox>,
+                          )}
                         </FormItem>
                       </div>
                       <div className="form-group">
@@ -697,7 +733,7 @@ class AddLecture extends React.Component {
                         </FormItem>
                       </div>
                       <div className="form-group">
-                        <FormItem label="Parts">
+                        <FormItem label="Part">
                           {form.getFieldDecorator('parts', {
                             initialValue: editinglecture ? editinglecture.parts : '',
                           })(<Input type="Number" placeholder="parts/songs" />)}
@@ -737,6 +773,7 @@ class AddLecture extends React.Component {
                             <ul>
                               <li className="filesList">
                                 {audioLink}
+                                &nbsp;&nbsp;
                                 <i
                                   className="fa fa-close closeIcon"
                                   onClick={() => {
@@ -803,17 +840,19 @@ class AddLecture extends React.Component {
                       <ul>
                         {summaryFiles && summaryFiles.length > 0
                           ? summaryFiles.map(item => {
-                              return (
-                                <li className="filesList">
-                                  {item}{' '}
-                                  <i
-                                    className="fa fa-close closeIcon"
-                                    onClick={() => {
-                                      this.deleteFile(item, 'summary')
-                                    }}
-                                  />
-                                </li>
-                              )
+                              if (item !== '') {
+                                return (
+                                  <li className="filesList">
+                                    {item} &nbsp;&nbsp;
+                                    <i
+                                      className="fa fa-close closeIcon"
+                                      onClick={() => {
+                                        this.deleteFile(item, 'summary')
+                                      }}
+                                    />
+                                  </li>
+                                )
+                              }
                             })
                           : null}
                       </ul>
@@ -823,6 +862,7 @@ class AddLecture extends React.Component {
                     <FormItem>
                       {form.getFieldDecorator('Files1')(
                         <Dragger
+                          beforeUpload={this.beforeUpload}
                           showUploadList={false}
                           customRequest={this.dummyRequest}
                           onChange={this.handleSummaryFileChange}
@@ -868,17 +908,19 @@ class AddLecture extends React.Component {
                     <ul>
                       {transcriptionFiles && transcriptionFiles.length > 0
                         ? transcriptionFiles.map(item => {
-                            return (
-                              <li className="filesList">
-                                {item}{' '}
-                                <i
-                                  className="fa fa-close closeIcon"
-                                  onClick={() => {
-                                    this.deleteFile(item, 'transcription')
-                                  }}
-                                />
-                              </li>
-                            )
+                            if (item !== '') {
+                              return (
+                                <li className="filesList">
+                                  {item} &nbsp;&nbsp;
+                                  <i
+                                    className="fa fa-close closeIcon"
+                                    onClick={() => {
+                                      this.deleteFile(item, 'transcription')
+                                    }}
+                                  />
+                                </li>
+                              )
+                            }
                           })
                         : null}
                     </ul>
@@ -888,6 +930,7 @@ class AddLecture extends React.Component {
                   <FormItem>
                     {form.getFieldDecorator('Files2')(
                       <Dragger
+                        beforeUpload={this.beforeUpload}
                         showUploadList={false}
                         customRequest={this.dummyRequest}
                         onChange={this.handleTranscriptionFileChange}

@@ -1,7 +1,8 @@
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 import React from 'react'
-import { Table, Button, DatePicker, Select } from 'antd'
+import { Table, DatePicker, Select } from 'antd'
 import { Helmet } from 'react-helmet'
-// import styles from './style.module.scss'
 import { connect } from 'react-redux'
 import renderHTML from 'react-render-html'
 import { Link } from 'react-router-dom'
@@ -89,10 +90,16 @@ class ProductsList extends React.Component {
         render: title => (title ? renderHTML(this.showing100Characters(title)) : ''),
       },
       {
-        title: 'Topic',
+        title: 'Need Translation',
+        dataIndex: 'translation_required',
+        key: 'translation_required',
+        render: type => <span>{`${type}`}</span>,
+      },
+      {
+        title: 'Need Translation',
         dataIndex:
-          window.localStorage['app.settings.locale'] === '"ru-RU"' ? 'ru.topic' : 'en.topic',
-        key: window.localStorage['app.settings.locale'] === '"ru-RU"' ? 'ru.topic' : 'en.topic',
+          window.localStorage['app.settings.locale'] === '"ru-RU"' ? 'ru.event' : 'en.event',
+        key: window.localStorage['app.settings.locale'] === '"ru-RU"' ? 'ru.event' : 'en.event',
       },
       {
         title: 'Event',
@@ -109,6 +116,7 @@ class ProductsList extends React.Component {
         title: 'Date',
         dataIndex: 'created_date',
         key: 'created_date',
+        render: date => <span>{`${new Date(date).toDateString()}`}</span>,
       },
       {
         title: 'Action',
@@ -116,19 +124,14 @@ class ProductsList extends React.Component {
         render: record => (
           <span>
             <Link to={{ pathname: '/lecture/create', state: record.uuid }}>
-              <Button icon="edit" className="mr-1" size="small">
-                Edit
-              </Button>
+              <i className="fa fa-edit mr-2" />
             </Link>
-            <Button
-              icon="cross"
-              size="small"
+            <i
+              className="fa fa-trash mr-2"
               onClick={() => {
                 this.deleteLecture(record.uuid)
               }}
-            >
-              Remove
-            </Button>
+            />
           </span>
         ),
       },
