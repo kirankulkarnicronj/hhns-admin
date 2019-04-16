@@ -245,6 +245,20 @@ const routes = [
     exact: true,
   },
 
+  // gallery
+
+  {
+    path: '/gallery/list',
+    component: loadable(() => import('pages/gallery/list')),
+    exact: true,
+  },
+
+  {
+    path: '/gallery/create',
+    component: loadable(() => import('pages/gallery/add-gallery')),
+    exact: true,
+  },
+
   // YouTube
   {
     path: '/youtube/feed',

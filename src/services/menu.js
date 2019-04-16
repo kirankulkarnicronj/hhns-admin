@@ -269,6 +269,22 @@ export async function getLeftMenuData() {
       ],
     },
     {
+      title: 'Gallery',
+      key: 'gallery',
+      children: [
+        {
+          title: 'list',
+          key: 'GalleryList',
+          url: '/gallery/list',
+        },
+        {
+          title: 'Create Image Collection',
+          key: 'createImageCollection',
+          url: '/gallery/create',
+        },
+      ],
+    },
+    {
       title: 'YouTube',
       key: 'youtube',
       icon: 'icmn icmn-youtube',
@@ -598,6 +614,22 @@ export async function getTopMenuData() {
               title: 'Add Lecture',
               key: 'addLecture',
               url: '/lecture/create',
+            },
+          ],
+        },
+        {
+          title: 'Gallery',
+          key: 'gallery',
+          children: [
+            {
+              title: 'list',
+              key: 'GalleryList',
+              url: '/gallery/list',
+            },
+            {
+              title: 'Create Image Collection',
+              key: 'createImageCollection',
+              url: '/gallery/create',
             },
           ],
         },
