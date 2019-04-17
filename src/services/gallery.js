@@ -6,6 +6,7 @@ export async function getStaticGallery() {
   return axios
     .get(url)
     .then(response => {
+      console.log('response =====>>>>>>>', response)
       if (response && response.data) {
         return response
       }
@@ -32,7 +33,7 @@ export async function createGallery(body) {
 }
 
 export async function removeGallery(uuid) {
-  const url = `${serverAddress}/api/gallery/:${uuid}/remove`
+  const url = `${serverAddress}/api/gallery/${uuid}/remove`
   return axios
     .post(url)
     .then(response => {
@@ -48,6 +49,22 @@ export async function removeGallery(uuid) {
 
 export async function getSubGalleryByGallery(body) {
   const url = `${serverAddress}/api/gallery/getGalleryByGallery/`
+  return axios
+    .post(url, body)
+    .then(response => {
+      if (response && response.data) {
+        return response
+      }
+      return false
+    })
+    .catch(error => {
+      return error
+    })
+}
+
+export async function getGalleryByUuid(request) {
+  const body = request.payload
+  const url = `${serverAddress}/api/gallery/getgallerybyid/`
   return axios
     .post(url, body)
     .then(response => {

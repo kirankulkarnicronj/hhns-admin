@@ -5,24 +5,26 @@ import {
   createGallery,
   removeGallery,
   getSubGalleryByGallery,
+  getGalleryByUuid,
 } from 'services/gallery'
 import actions from './action'
 
 export function* getStaticGallerySage() {
   try {
-    const result = yield call(getStaticGallery())
+    const result = yield call(getStaticGallery)
     console.log('result ====>>>>>', result)
     const { data } = result
     const { gallery } = data
     if (result.status === 200) {
       yield put({
-        type: 'gallery/GET_GALLERY_LIST',
+        type: 'gallery/SET_STATE',
         payload: {
           mainGallery: gallery,
+          totalmainGallery: gallery.length,
           isGalleryCreated: false,
           isDeleted: false,
           isUpdated: false,
-          loading: true,
+          loading: false,
         },
       })
     }
@@ -34,17 +36,19 @@ export function* getStaticGallerySage() {
   }
 }
 
-export function* getSubGalleryByGallerySaga(body) {
+export function* getSubGalleryByGallerySaga(payload) {
   try {
+    const { body } = payload
     const result = yield call(getSubGalleryByGallery, body)
     console.log('result ====>>>>>', result)
     const { data } = result
     const { gallery } = data
     if (result.status === 200) {
       yield put({
-        type: 'gallery/GET_SUB_GALLERY',
+        type: 'gallery/SET_STATE',
         payload: {
           subGallery: gallery,
+          totalSubGallery: gallery.length,
           isGalleryCreated: false,
           isDeleted: false,
           isUpdated: false,
@@ -60,19 +64,24 @@ export function* getSubGalleryByGallerySaga(body) {
   }
 }
 
-export function* createGallerySaga(body) {
+export function* createGallerySaga(payload) {
   try {
+    const { body } = payload
     const result = yield call(createGallery, body)
     console.log('result ====>>>>>', result)
     if (result.status === 200) {
       yield put({
-        type: 'gallery/CREATE_GALLERY',
+        type: 'gallery/SET_STATE',
         payload: {
           isGalleryCreated: true,
           isDeleted: false,
           isUpdated: false,
           loading: true,
         },
+      })
+      notification.success({
+        message: 'Success',
+        description: 'Gallery has been created successfully',
       })
     }
   } catch (err) {
@@ -90,13 +99,17 @@ export function* removeGallerySaga(payload) {
     console.log('result ====>>>>>', result)
     if (result.status === 200) {
       yield put({
-        type: 'gallery/REMOVE_GALLERY',
+        type: 'gallery/SET_STATE',
         payload: {
           isGalleryCreated: false,
           isDeleted: true,
           isUpdated: false,
           loading: true,
         },
+      })
+      notification.success({
+        message: 'Success',
+        description: 'Gallery is deleted Successfully',
       })
     }
   } catch (err) {
@@ -107,11 +120,37 @@ export function* removeGallerySaga(payload) {
   }
 }
 
+export function* getGalleyByUuidSaga(body) {
+  try {
+    const result = yield call(getGalleryByUuid, body)
+    const { data } = result
+    console.log('result =====>>>>', result)
+    if (result.status === 200) {
+      yield put({
+        type: 'gallery/SET_STATE',
+        payload: {
+          editGallery: data.gallery,
+          isGalleryCreated: false,
+          isDeleted: false,
+          isUpdated: false,
+          loading: true,
+        },
+      })
+    }
+  } catch (err) {
+    notification.warning({
+      message: 'Error',
+      description: 'Some Error Occured',
+    })
+  }
+}
+
 export default function* rootSaga() {
   yield all([
     takeEvery(actions.GET_GALLERY_LIST, getStaticGallerySage),
     takeEvery(actions.CREATE_GALLERY, createGallerySaga),
     takeEvery(actions.REMOVE_GALLERY, removeGallerySaga),
     takeEvery(actions.GET_SUB_GALLERY, getSubGalleryByGallerySaga),
+    takeEvery(actions.GET_GALLERY_BY_ID, getGalleyByUuidSaga),
   ])
 }

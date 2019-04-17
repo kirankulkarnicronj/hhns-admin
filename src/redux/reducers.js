@@ -5,6 +5,7 @@ import menu from './menu/reducers'
 import settings from './settings/reducers'
 import blog from './blog/reducer'
 import lecture from './lecture/reducer'
+import gallery from './gallery/reducer'
 
 export default history =>
   combineReducers({
@@ -14,4 +15,5 @@ export default history =>
     settings,
     blog,
     lecture,
+    gallery,
   })
