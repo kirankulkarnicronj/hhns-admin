@@ -6,6 +6,7 @@ import {
   removeGallery,
   getSubGalleryByGallery,
   getGalleryByUuid,
+  updateGallery,
 } from 'services/gallery'
 import actions from './action'
 
@@ -124,23 +125,52 @@ export function* getGalleyByUuidSaga(body) {
   try {
     const result = yield call(getGalleryByUuid, body)
     const { data } = result
-    console.log('result =====>>>>', result)
+    const { gallery } = data
     if (result.status === 200) {
       yield put({
         type: 'gallery/SET_STATE',
         payload: {
-          editGallery: data.gallery,
+          editGallery: gallery,
           isGalleryCreated: false,
           isDeleted: false,
           isUpdated: false,
-          loading: true,
+          loading: false,
         },
       })
     }
   } catch (err) {
     notification.warning({
-      message: 'Error',
+      message: 'shailu',
       description: 'Some Error Occured',
+    })
+  }
+}
+
+export function* updateGallerySaga(payload) {
+  try {
+    const { body, uuid } = payload.payload
+    console.log('payload ====>>>>', body, uuid)
+    const result = yield call(updateGallery, uuid, body)
+    if (result.status === 200) {
+      yield put({
+        type: 'gallery/SET_STATE',
+        payload: {
+          editGallery: '',
+          isGalleryCreated: false,
+          isDeleted: false,
+          isUpdated: false,
+          loading: false,
+        },
+      })
+      notification.success({
+        message: 'Success',
+        description: 'Gallery is updated successfully',
+      })
+    }
+  } catch (err) {
+    notification.warning({
+      message: 'Error',
+      description: 'Some Error Occured While Updating Gallery',
     })
   }
 }
@@ -152,5 +182,6 @@ export default function* rootSaga() {
     takeEvery(actions.REMOVE_GALLERY, removeGallerySaga),
     takeEvery(actions.GET_SUB_GALLERY, getSubGalleryByGallerySaga),
     takeEvery(actions.GET_GALLERY_BY_ID, getGalleyByUuidSaga),
+    takeEvery(actions.UPDATE_GALLERY, updateGallerySaga),
   ])
 }

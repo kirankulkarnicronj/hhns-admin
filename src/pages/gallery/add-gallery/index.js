@@ -12,6 +12,7 @@ import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css'
 import { EditorState, convertToRaw } from 'draft-js'
 import draftToHtml from 'draftjs-to-html'
 import $ from 'jquery'
+import moment from 'moment'
 
 import styles from './style.module.scss'
 
@@ -202,13 +203,15 @@ class CreateGallery extends React.Component {
 
   handleFormBody = event => {
     event.preventDefault()
-    const { form, dispatch } = this.props
-    const { photoFiles, galleryBody, gallery, createDate, publishDate } = this.state
+    const { form, dispatch, router } = this.props
+    const { location } = router
+    const uuid = location.state
+    const { photoFiles, galleryBody, gallery, createDate, publishDate, editGallery } = this.state
     const titleEn = form.getFieldValue('title')
     const bodyEn = draftToHtml(convertToRaw(galleryBody.getCurrentContent()))
 
     const body = {
-      uuid: this.uuidv4(),
+      uuid: uuid || this.uuidv4(),
       title: titleEn,
       gallery,
       date: createDate,
@@ -216,10 +219,21 @@ class CreateGallery extends React.Component {
       photos: photoFiles,
       body: bodyEn,
     }
-    dispatch({
-      type: 'gallery/CREATE_GALLERY',
-      body,
-    })
+    if (editGallery !== '') {
+      const payload = {
+        body,
+        uuid,
+      }
+      dispatch({
+        type: 'gallery/UPDATE_GALLERY',
+        payload,
+      })
+    } else {
+      dispatch({
+        type: 'gallery/CREATE_GALLERY',
+        body,
+      })
+    }
   }
 
   deleteFile = item => {
@@ -271,6 +285,7 @@ class CreateGallery extends React.Component {
   render() {
     const { form, gallery } = this.props
     const { mainGallery } = gallery
+    const dateFormat = 'YYYY/MM/DD'
 
     const { galleryBody, photoFiles, editGallery } = this.state
     return (
@@ -329,25 +344,15 @@ class CreateGallery extends React.Component {
                 <div className="form-group">
                   <FormItem label="Created Date">
                     {form.getFieldDecorator('create_date', {
-                      initialValue: editGallery ? editGallery.date : '',
-                    })(
-                      <DatePicker
-                        onChange={this.handleCreateDate}
-                        placeholder="Select Create Date"
-                      />,
-                    )}
+                      initialValue: editGallery ? moment(editGallery.date, dateFormat) : '',
+                    })(<DatePicker onChange={this.handleCreateDate} />)}
                   </FormItem>
                 </div>
                 <div className="form-group">
                   <FormItem label="Published Date">
                     {form.getFieldDecorator('publish_date', {
-                      initialValue: editGallery ? editGallery.publish_date : '',
-                    })(
-                      <DatePicker
-                        placeholder="Select Publish Date"
-                        onChange={this.handlePublishDate}
-                      />,
-                    )}
+                      initialValue: editGallery ? moment(editGallery.publish_date, dateFormat) : '',
+                    })(<DatePicker onChange={this.handlePublishDate} />)}
                   </FormItem>
                 </div>
                 <div className="form-group">

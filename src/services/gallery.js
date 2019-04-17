@@ -77,3 +77,19 @@ export async function getGalleryByUuid(request) {
       return error
     })
 }
+
+export async function updateGallery(uuid, body) {
+  console.log('value in api ====>>>', body, uuid)
+  const url = `${serverAddress}/api/gallery/${uuid}/update`
+  return axios
+    .post(url, body)
+    .then(response => {
+      if (response.status === 200) {
+        return response
+      }
+      return false
+    })
+    .catch(error => {
+      return error
+    })
+}
