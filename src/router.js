@@ -246,6 +246,11 @@ const routes = [
   },
 
   // gallery
+  {
+    path: '/gallery/mainGallery',
+    component: loadable(() => import('pages/gallery/mainGallery')),
+    exact: true,
+  },
 
   {
     path: '/gallery/list',
