@@ -51,6 +51,7 @@ class AddLecture extends React.Component {
       editinglecture: '',
       editedBody: '',
       language: true,
+      uploading: true,
       audioUploading: false,
       transcriptionUploading: false,
       summaryUploading: false,
@@ -83,7 +84,8 @@ class AddLecture extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.lecture.editLecture !== '') {
+    const { uploading } = this.state
+    if (nextProps.lecture.editLecture !== '' && uploading) {
       const { lecture } = nextProps
       const { language } = this.state
       this.setState({
@@ -278,24 +280,39 @@ class AddLecture extends React.Component {
   }
 
   handleFileChange = info => {
-    this.setState({
-      audioUploading: true,
-    })
-    this.handleUploading(info)
+    this.setState(
+      {
+        audioUploading: true,
+        uploading: false,
+      },
+      () => {
+        this.handleUploading(info)
+      },
+    )
   }
 
   handleSummaryFileChange = info => {
-    this.setState({
-      summaryUploading: true,
-    })
-    this.handleUploading(info)
+    this.setState(
+      {
+        summaryUploading: true,
+        uploading: false,
+      },
+      () => {
+        this.handleUploading(info)
+      },
+    )
   }
 
   handleTranscriptionFileChange = info => {
-    this.setState({
-      transcriptionUploading: true,
-    })
-    this.handleUploading(info)
+    this.setState(
+      {
+        transcriptionUploading: true,
+        uploading: false,
+      },
+      () => {
+        this.handleUploading(info)
+      },
+    )
   }
 
   handleUploading = info => {

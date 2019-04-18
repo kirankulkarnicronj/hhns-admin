@@ -27,6 +27,7 @@ class AddForm extends React.Component {
     editingBlog: '',
     editedBody: '',
     translationRequired: false,
+    upoading: true,
   }
 
   componentDidMount() {
@@ -45,7 +46,8 @@ class AddForm extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.blog.editBlog) {
+    const { upoading } = this.state
+    if (nextProps.blog.editBlog && upoading) {
       const { blog, english } = nextProps
       const { editBlog } = blog
       const html = editBlog ? (english ? editBlog.body_en : editBlog.body_ru) : ''
@@ -144,7 +146,9 @@ class AddForm extends React.Component {
 
   handleFileChange = info => {
     if (info.file.status === 'done') {
-      this.uploads3(info.file)
+      this.setState({ upoading: false }, () => {
+        this.uploads3(info.file)
+      })
     }
   }
 

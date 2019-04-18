@@ -32,6 +32,7 @@ class CreateGallery extends React.Component {
       publishDate: '',
       gallery: '2019',
       editGallery: '',
+      uploading: true,
     }
   }
 
@@ -39,7 +40,6 @@ class CreateGallery extends React.Component {
     const { dispatch, router } = this.props
     const { location } = router
     const uuid = location.state
-    console.log('uuid =====>>>>>', uuid)
     if (uuid !== undefined) {
       const body = {
         uuid,
@@ -55,7 +55,8 @@ class CreateGallery extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.gallery.editGallery !== '') {
+    const { uploading } = this.state
+    if (nextProps.gallery.editGallery !== '' && uploading) {
       const { gallery } = nextProps
       const { editGallery } = gallery
       this.setState({
@@ -95,11 +96,12 @@ class CreateGallery extends React.Component {
   }
 
   beforeUploadAudio = file => {
-    const isJPG = file.type === 'image/jpg' || 'image/png' || 'image/jpeg'
+    console.log('type==>>', file.type)
+    const isJPG = file.type === 'image/jpg' || 'image/jpeg'
     if (!isJPG) {
       notification.error({
         message: 'error',
-        description: 'You can only upload image file!',
+        description: 'You can only upload jpg/jpeg file!',
       })
     }
     return isJPG
@@ -113,7 +115,14 @@ class CreateGallery extends React.Component {
   }
 
   handleFileChange = info => {
-    this.handleUploading(info)
+    this.setState(
+      {
+        uploading: false,
+      },
+      () => {
+        this.handleUploading(info)
+      },
+    )
   }
 
   handleUploading = info => {
@@ -156,7 +165,9 @@ class CreateGallery extends React.Component {
       success: data => {
         const temp = data.presignedUrl.toString()
         const finalUrl = temp.substr(0, temp.lastIndexOf('?'))
-        this.setUploadedFiles(finalUrl)
+        setTimeout(() => {
+          this.setUploadedFiles(finalUrl)
+        }, 0)
         this.uploadFileToS3UsingPresignedUrl(data.presignedUrl, file)
       },
       error() {
@@ -195,12 +206,20 @@ class CreateGallery extends React.Component {
 
   setUploadedFiles = finalUrl => {
     const { photoFiles } = this.state
-
-    const array = [...photoFiles]
+    let array
+    if (photoFiles && photoFiles.length > 0) {
+      array = [...photoFiles]
+    } else {
+      array = []
+    }
     array.push(finalUrl)
     this.setState({
       photoFiles: array,
     })
+
+    // this.setState(prevState => ({
+    //   photoFiles: [...prevState.photoFiles, finalUrl]
+    // }))
   }
 
   handleCreateDate = (date, dateString) => {
