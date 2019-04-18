@@ -71,6 +71,19 @@ class CreateGallery extends React.Component {
     }
   }
 
+  componentWillUnmount() {
+    const { form } = this.props
+    form.resetFields()
+    this.setState({
+      photoFiles: [],
+      galleryBody: EditorState.createEmpty(),
+      createDate: '',
+      publishDate: '',
+      gallery: '2019',
+      editGallery: '',
+    })
+  }
+
   onEditorStateChange: Function = editorState => {
     this.setState({
       galleryBody: editorState,
@@ -342,7 +355,7 @@ class CreateGallery extends React.Component {
                     >
                       {mainGallery && mainGallery.length > 0
                         ? mainGallery.map(item => {
-                            return <Option value={item}>{item}</Option>
+                            return <Option value={item.name}>{item.name}</Option>
                           })
                         : null}
                     </Select>
@@ -351,18 +364,18 @@ class CreateGallery extends React.Component {
                 <div className="form-group">
                   <FormItem label="Created Date">
                     {form.getFieldDecorator('create_date', {
-                      initialValue: editGallery
-                        ? moment(editGallery.date, dateFormat)
-                        : moment(new Date(), dateFormat),
+                      initialValue:
+                        editGallery && editGallery.date ? moment(editGallery.date, dateFormat) : '',
                     })(<DatePicker onChange={this.handleCreateDate} />)}
                   </FormItem>
                 </div>
                 <div className="form-group">
                   <FormItem label="Published Date">
                     {form.getFieldDecorator('publish_date', {
-                      initialValue: editGallery
-                        ? moment(editGallery.publish_date, dateFormat)
-                        : moment(new Date(), dateFormat),
+                      initialValue:
+                        editGallery && editGallery.publish_date
+                          ? moment(editGallery.publish_date, dateFormat)
+                          : '',
                     })(<DatePicker onChange={this.handlePublishDate} />)}
                   </FormItem>
                 </div>

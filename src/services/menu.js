@@ -274,7 +274,7 @@ export async function getLeftMenuData() {
       children: [
         {
           title: 'MAIN GALLERY',
-          key: 'GalleryList',
+          key: 'GalleryMainList',
           url: '/gallery/mainGallery',
         },
         {
@@ -633,7 +633,7 @@ export async function getTopMenuData() {
       children: [
         {
           title: 'MAIN GALLERY',
-          key: 'GalleryList',
+          key: 'GalleryMainList',
           url: '/gallery/mainGallery',
         },
         {

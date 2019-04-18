@@ -124,7 +124,7 @@ class GalleryList extends React.Component {
               >
                 {mainGallery && mainGallery.length > 0
                   ? mainGallery.map(item => {
-                      return <Option value={item}>{item}</Option>
+                      return <Option value={item.name}>{item.name}</Option>
                     })
                   : null}
               </Select>
