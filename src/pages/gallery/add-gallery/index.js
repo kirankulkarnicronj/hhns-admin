@@ -39,9 +39,7 @@ class CreateGallery extends React.Component {
     const { dispatch, router } = this.props
     const { location } = router
     const uuid = location.state
-    dispatch({
-      type: 'gallery/GET_GALLERY_LIST',
-    })
+    console.log('uuid =====>>>>>', uuid)
     if (uuid !== undefined) {
       const body = {
         uuid,
@@ -51,6 +49,9 @@ class CreateGallery extends React.Component {
         payload: body,
       })
     }
+    dispatch({
+      type: 'gallery/GET_GALLERY_LIST',
+    })
   }
 
   componentWillReceiveProps(nextProps) {
@@ -61,6 +62,8 @@ class CreateGallery extends React.Component {
         editGallery,
         gallery: editGallery.gallery,
         photoFiles: editGallery.photos,
+        createDate: editGallery.date,
+        publishDate: editGallery.publish_date,
       })
     }
     if (nextProps.gallery.isGalleryCreated) {
@@ -189,16 +192,20 @@ class CreateGallery extends React.Component {
 
   handleCreateDate = (date, dateString) => {
     console.log(date, dateString)
-    this.setState({
-      createDate: dateString,
-    })
+    setTimeout(() => {
+      this.setState({
+        createDate: dateString,
+      })
+    }, 0)
   }
 
   handlePublishDate = (date, dateString) => {
     console.log(date, dateString)
-    this.setState({
-      publishDate: dateString,
-    })
+    setTimeout(() => {
+      this.setState({
+        publishDate: dateString,
+      })
+    }, 0)
   }
 
   handleFormBody = event => {
@@ -344,14 +351,18 @@ class CreateGallery extends React.Component {
                 <div className="form-group">
                   <FormItem label="Created Date">
                     {form.getFieldDecorator('create_date', {
-                      initialValue: editGallery ? moment(editGallery.date, dateFormat) : '',
+                      initialValue: editGallery
+                        ? moment(editGallery.date, dateFormat)
+                        : moment(new Date(), dateFormat),
                     })(<DatePicker onChange={this.handleCreateDate} />)}
                   </FormItem>
                 </div>
                 <div className="form-group">
                   <FormItem label="Published Date">
                     {form.getFieldDecorator('publish_date', {
-                      initialValue: editGallery ? moment(editGallery.publish_date, dateFormat) : '',
+                      initialValue: editGallery
+                        ? moment(editGallery.publish_date, dateFormat)
+                        : moment(new Date(), dateFormat),
                     })(<DatePicker onChange={this.handlePublishDate} />)}
                   </FormItem>
                 </div>
