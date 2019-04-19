@@ -7,6 +7,7 @@ import blog from './blog/reducer'
 import lecture from './lecture/reducer'
 import gallery from './gallery/reducer'
 import quote from './quote/reducer'
+import galleryList from './galleryListing/reducer'
 
 export default history =>
   combineReducers({
@@ -18,4 +19,5 @@ export default history =>
     lecture,
     gallery,
     quote,
+    galleryList,
   })
