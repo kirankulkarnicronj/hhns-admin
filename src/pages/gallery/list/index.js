@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React from 'react'
-import { Table, Select } from 'antd'
+import { Table, Select, Switch } from 'antd'
 import { Helmet } from 'react-helmet'
 import { connect } from 'react-redux'
 import { Link } from 'react-router-dom'
@@ -12,6 +12,7 @@ const { Option } = Select
 class GalleryList extends React.Component {
   state = {
     gallery: '2019',
+    language: true,
   }
 
   componentDidMount() {
@@ -64,18 +65,31 @@ class GalleryList extends React.Component {
     })
   }
 
+  handleLanguage = () => {
+    const { language } = this.state
+    this.setState({
+      language: !language,
+    })
+  }
+
   render() {
     const { gallery } = this.props
     const { mainGallery, subGallery, totalSubGallery } = gallery
+    const { language } = this.state
 
     const columns = [
       {
         title: 'Title',
-        dataIndex: 'title',
-        key: 'title',
+        dataIndex: language ? 'title_en' : 'title_ru',
+        key: 'title_en',
         render: title => <span>{title}</span>,
       },
-
+      {
+        title: 'Need Translation',
+        dataIndex: 'translation_required',
+        key: 'translation_required',
+        render: type => <span>{`${type}`}</span>,
+      },
       {
         title: 'Date',
         dataIndex: 'date',
@@ -107,6 +121,14 @@ class GalleryList extends React.Component {
           <div className="card-header">
             <div className="utils__title">
               <strong>Gallery List</strong>
+              <Switch
+                defaultChecked
+                checkedChildren={language ? 'en' : 'ru'}
+                unCheckedChildren={language ? 'en' : 'ru'}
+                onChange={this.handleLanguage}
+                className="toggle"
+                style={{ width: '100px', marginLeft: '10px' }}
+              />
             </div>
             <div style={{ paddingTop: '10px' }}>
               <strong style={{ paddingRight: '20px' }}>Select Gallery</strong>
@@ -124,13 +146,20 @@ class GalleryList extends React.Component {
               >
                 {mainGallery && mainGallery.length > 0
                   ? mainGallery.map(item => {
-                      return <Option value={item.name}>{item.name}</Option>
+                      return (
+                        <Option value={language ? item.name_en : item.name_ru}>
+                          {language ? item.name_en : item.name_ru}
+                        </Option>
+                      )
                     })
                   : null}
               </Select>
             </div>
             <div className="card-body">
               <Table
+                rowClassName={record =>
+                  record.translation_required === true ? 'NotTranslated' : 'translated'
+                }
                 className="utils__scrollTable"
                 scroll={{ x: '100%' }}
                 columns={columns}

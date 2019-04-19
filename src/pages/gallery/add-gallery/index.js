@@ -1,10 +1,22 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable consistent-return */
 /* eslint-disable array-callback-return */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-no-comment-textnodes */
 import React from 'react'
-import { DatePicker, Form, Input, Select, Upload, Icon, notification, Button } from 'antd'
+import {
+  DatePicker,
+  Checkbox,
+  Form,
+  Input,
+  Select,
+  Upload,
+  Icon,
+  notification,
+  Button,
+  Switch,
+} from 'antd'
 import { Helmet } from 'react-helmet'
 import { connect } from 'react-redux'
 import { Editor } from 'react-draft-wysiwyg'
@@ -33,6 +45,8 @@ class CreateGallery extends React.Component {
       gallery: '2019',
       editGallery: '',
       uploading: true,
+      language: true,
+      translationRequired: false,
     }
   }
 
@@ -61,10 +75,11 @@ class CreateGallery extends React.Component {
       const { editGallery } = gallery
       this.setState({
         editGallery,
-        gallery: editGallery.gallery,
-        photoFiles: editGallery.photos,
-        createDate: editGallery.date,
-        publishDate: editGallery.publish_date,
+        gallery: editGallery.gallery || '2019',
+        photoFiles: editGallery.photos || [],
+        createDate: editGallery.date || '',
+        publishDate: editGallery.publish_date || '',
+        translationRequired: editGallery.translation_required,
       })
     }
     if (nextProps.gallery.isGalleryCreated) {
@@ -85,6 +100,14 @@ class CreateGallery extends React.Component {
     })
   }
 
+  handleCheckbox = event => {
+    setTimeout(() => {
+      this.setState({
+        translationRequired: event.target.checked,
+      })
+    }, 0)
+  }
+
   onEditorStateChange: Function = editorState => {
     this.setState({
       galleryBody: editorState,
@@ -92,11 +115,10 @@ class CreateGallery extends React.Component {
   }
 
   hadleSelectGallery = gallery => {
-    this.setState({ gallery })
+    this.setState({ gallery, uploading: false })
   }
 
   beforeUploadAudio = file => {
-    console.log('type==>>', file.type)
     const isJPG = file.type === 'image/jpg' || 'image/jpeg'
     if (!isJPG) {
       notification.error({
@@ -108,10 +130,17 @@ class CreateGallery extends React.Component {
   }
 
   dummyRequest = ({ file, onSuccess }) => {
-    console.log(file)
+    console.info(file)
     setTimeout(() => {
       onSuccess('ok')
     }, 0)
+  }
+
+  handleLanguage = () => {
+    const { language } = this.state
+    this.setState({
+      language: !language,
+    })
   }
 
   handleFileChange = info => {
@@ -126,7 +155,6 @@ class CreateGallery extends React.Component {
   }
 
   handleUploading = info => {
-    console.log('info.file.type=====>>>>', info.file.type)
     if (info.file.status === 'uploading') {
       notification.success({
         message: 'Uploading Started',
@@ -216,26 +244,24 @@ class CreateGallery extends React.Component {
     this.setState({
       photoFiles: array,
     })
-
-    // this.setState(prevState => ({
-    //   photoFiles: [...prevState.photoFiles, finalUrl]
-    // }))
   }
 
   handleCreateDate = (date, dateString) => {
-    console.log(date, dateString)
+    console.info(date, dateString)
     setTimeout(() => {
       this.setState({
         createDate: dateString,
+        uploading: false,
       })
     }, 0)
   }
 
   handlePublishDate = (date, dateString) => {
-    console.log(date, dateString)
+    console.info(date, dateString)
     setTimeout(() => {
       this.setState({
         publishDate: dateString,
+        uploading: false,
       })
     }, 0)
   }
@@ -245,34 +271,57 @@ class CreateGallery extends React.Component {
     const { form, dispatch, router } = this.props
     const { location } = router
     const uuid = location.state
-    const { photoFiles, galleryBody, gallery, createDate, publishDate, editGallery } = this.state
-    const titleEn = form.getFieldValue('title')
-    const bodyEn = draftToHtml(convertToRaw(galleryBody.getCurrentContent()))
-
-    const body = {
-      uuid: uuid || this.uuidv4(),
-      title: titleEn,
+    const {
+      photoFiles,
+      galleryBody,
       gallery,
-      date: createDate,
-      publish_date: publishDate,
-      photos: photoFiles,
-      body: bodyEn,
-    }
-    if (editGallery !== '') {
-      const payload = {
-        body,
-        uuid,
+      createDate,
+      publishDate,
+      editGallery,
+      language,
+      translationRequired,
+    } = this.state
+    const title = form.getFieldValue('title')
+    const bodyEn = draftToHtml(convertToRaw(galleryBody.getCurrentContent()))
+    form.validateFields(['title', 'create_date', 'publish_date'], (err, values) => {
+      console.info(values)
+      if (!err) {
+        const body = {
+          uuid: uuid || this.uuidv4(),
+          gallery,
+          date: createDate,
+          publish_date: publishDate,
+          photos: photoFiles,
+          body: bodyEn,
+          translation_required: translationRequired,
+          title_en: language
+            ? title
+            : editGallery && editGallery.title_en
+            ? editGallery.title_en
+            : '',
+          title_ru: language
+            ? editGallery && editGallery.title_ru
+              ? editGallery.title_ru
+              : ''
+            : title,
+        }
+        if (editGallery !== '' && uuid) {
+          const payload = {
+            body,
+            uuid,
+          }
+          dispatch({
+            type: 'gallery/UPDATE_GALLERY',
+            payload,
+          })
+        } else {
+          dispatch({
+            type: 'gallery/CREATE_GALLERY',
+            body,
+          })
+        }
       }
-      dispatch({
-        type: 'gallery/UPDATE_GALLERY',
-        payload,
-      })
-    } else {
-      dispatch({
-        type: 'gallery/CREATE_GALLERY',
-        body,
-      })
-    }
+    })
   }
 
   deleteFile = item => {
@@ -326,7 +375,7 @@ class CreateGallery extends React.Component {
     const { mainGallery } = gallery
     const dateFormat = 'YYYY/MM/DD'
 
-    const { galleryBody, photoFiles, editGallery } = this.state
+    const { galleryBody, photoFiles, editGallery, language, translationRequired } = this.state
     return (
       <div>
         <Helmet title="Create Gallery" />
@@ -334,6 +383,14 @@ class CreateGallery extends React.Component {
           <div className="card-header mb-2">
             <div className="utils__title">
               <strong>Create Gallery</strong>
+              <Switch
+                defaultChecked
+                checkedChildren={language ? 'en' : 'ru'}
+                unCheckedChildren={language ? 'en' : 'ru'}
+                onChange={this.handleLanguage}
+                className="toggle"
+                style={{ width: '100px', marginLeft: '10px' }}
+              />
             </div>
           </div>
           <div className="card-body">
@@ -342,7 +399,18 @@ class CreateGallery extends React.Component {
                 <div className="form-group">
                   <FormItem label="Title">
                     {form.getFieldDecorator('title', {
-                      initialValue: editGallery ? editGallery.title : '',
+                      rules: [
+                        {
+                          required: true,
+                          message: 'Title is required',
+                        },
+                      ],
+                      initialValue:
+                        editGallery && editGallery.uuid
+                          ? language
+                            ? editGallery.title_en
+                            : editGallery.title_ru
+                          : '',
                     })(<Input placeholder="Enter Title" />)}
                   </FormItem>
                 </div>
@@ -374,15 +442,39 @@ class CreateGallery extends React.Component {
                     >
                       {mainGallery && mainGallery.length > 0
                         ? mainGallery.map(item => {
-                            return <Option value={item.name}>{item.name}</Option>
+                            return (
+                              <Option
+                                key={item.uuid}
+                                value={language ? item.name_en : item.name_ru}
+                              >
+                                {language ? item.name_en : item.name_ru}
+                              </Option>
+                            )
                           })
                         : null}
                     </Select>
                   </FormItem>
                 </div>
                 <div className="form-group">
+                  <FormItem>
+                    {form.getFieldDecorator('translation', {
+                      initialValue: translationRequired,
+                    })(
+                      <Checkbox checked={translationRequired} onChange={this.handleCheckbox}>
+                        Need Translation ?
+                      </Checkbox>,
+                    )}
+                  </FormItem>
+                </div>
+                <div className="form-group">
                   <FormItem label="Created Date">
                     {form.getFieldDecorator('create_date', {
+                      rules: [
+                        {
+                          required: true,
+                          message: 'Date is required',
+                        },
+                      ],
                       initialValue:
                         editGallery && editGallery.date ? moment(editGallery.date, dateFormat) : '',
                     })(<DatePicker onChange={this.handleCreateDate} />)}
@@ -391,6 +483,12 @@ class CreateGallery extends React.Component {
                 <div className="form-group">
                   <FormItem label="Published Date">
                     {form.getFieldDecorator('publish_date', {
+                      rules: [
+                        {
+                          required: true,
+                          message: 'Publish Date is required',
+                        },
+                      ],
                       initialValue:
                         editGallery && editGallery.publish_date
                           ? moment(editGallery.publish_date, dateFormat)
@@ -426,7 +524,7 @@ class CreateGallery extends React.Component {
                     {form.getFieldDecorator('Files')(
                       <Dragger
                         beforeUpload={this.beforeUploadAudio}
-                        multiple={false}
+                        multiple
                         showUploadList={false}
                         customRequest={this.dummyRequest}
                         onChange={this.handleFileChange}

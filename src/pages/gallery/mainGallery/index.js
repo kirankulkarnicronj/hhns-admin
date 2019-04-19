@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React from 'react'
-import { Form, Input, Button, Table } from 'antd'
+import { Form, Input, Button, Table, Switch } from 'antd'
 import { Helmet } from 'react-helmet'
 import { connect } from 'react-redux'
 import styles from './style.module.scss'
@@ -11,7 +11,9 @@ const FormItem = Form.Item
 @Form.create()
 @connect(({ galleryList }) => ({ galleryList }))
 class MainGallery extends React.Component {
-  state = {}
+  state = {
+    language: true,
+  }
 
   componentDidMount() {
     const { dispatch } = this.props
@@ -58,15 +60,32 @@ class MainGallery extends React.Component {
   handleFormBody = event => {
     event.preventDefault()
     const { form, dispatch } = this.props
+    const { language } = this.state
     const name = form.getFieldValue('title')
+    form.validateFields(['title'], (err, values) => {
+      console.info(values)
+      if (!err) {
+        const body = {
+          uuid: this.uuidv4(),
+          date: new Date().toLocaleDateString(),
+        }
+        if (language) {
+          body.name_en = name
+        } else {
+          body.name_ru = name
+        }
+        dispatch({
+          type: 'galleryListing/CREATE_MAIN_GALLERY',
+          body,
+        })
+      }
+    })
+  }
 
-    const body = {
-      uuid: this.uuidv4(),
-      name,
-    }
-    dispatch({
-      type: 'galleryListing/CREATE_MAIN_GALLERY',
-      body,
+  handleLanguage = () => {
+    const { language } = this.state
+    this.setState({
+      language: !language,
     })
   }
 
@@ -78,12 +97,13 @@ class MainGallery extends React.Component {
   render() {
     const { form, galleryList } = this.props
     const { mainGallery, totalmainGallery } = galleryList
+    const { language } = this.state
 
     const columns = [
       {
         title: 'Title',
-        dataIndex: 'name',
-        key: 'name',
+        dataIndex: language ? 'name_en' : 'name_ru',
+        key: language ? 'name_en' : 'name_ru',
         render: title => <span>{title}</span>,
       },
       {
@@ -109,6 +129,14 @@ class MainGallery extends React.Component {
           <div className="card-header mb-2">
             <div className="utils__title">
               <strong>Create Main Gallery</strong>
+              <Switch
+                defaultChecked
+                checkedChildren={language ? 'en' : 'ru'}
+                unCheckedChildren={language ? 'en' : 'ru'}
+                onChange={this.handleLanguage}
+                className="toggle"
+                style={{ width: '100px', marginLeft: '10px' }}
+              />
             </div>
           </div>
           <div className="card-body">
@@ -116,7 +144,14 @@ class MainGallery extends React.Component {
               <Form className="mt-3">
                 <div className="form-group">
                   <FormItem label="Title">
-                    {form.getFieldDecorator('title')(<Input placeholder="Enter Title" />)}
+                    {form.getFieldDecorator('title', {
+                      rules: [
+                        {
+                          required: true,
+                          message: 'Title is required',
+                        },
+                      ],
+                    })(<Input placeholder="Enter Title" />)}
                   </FormItem>
                 </div>
               </Form>
