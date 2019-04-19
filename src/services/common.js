@@ -16,6 +16,21 @@ export async function getTopicList() {
     })
 }
 
+export async function getQuoteTopicList() {
+  const url = `${serverAddress}/api/quotetopiclist/`
+  return axios
+    .get(url)
+    .then(response => {
+      if (response && response.data) {
+        return response
+      }
+      return false
+    })
+    .catch(error => {
+      return error
+    })
+}
+
 export async function getEventList() {
   const url = `${serverAddress}/api/event/`
   return axios
