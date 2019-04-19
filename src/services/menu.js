@@ -15,12 +15,12 @@ export async function getLeftMenuData() {
     // {
     //   divider: true,
     // },
-    {
-      title: 'Dashboard Alpha',
-      key: 'dashboardAlpha',
-      url: '/dashboard/alpha',
-      icon: 'icmn icmn-home',
-    },
+    // {
+    //   title: 'Dashboard Alpha',
+    //   key: 'dashboardAlpha',
+    //   url: '/dashboard/alpha',
+    //   icon: 'icmn icmn-home',
+    // },
     // {
     //   title: 'Dashboard Beta',
     //   key: 'dashboardBeta',
@@ -286,6 +286,22 @@ export async function getLeftMenuData() {
           title: 'CREATE IMAGE COLLECTION',
           key: 'createImageCollection',
           url: '/gallery/create',
+        },
+      ],
+    },
+    {
+      title: 'QUOTE',
+      key: 'quote',
+      children: [
+        {
+          title: 'LIST',
+          key: 'QuoteList',
+          url: '/quote/list',
+        },
+        {
+          title: 'CREATE QUOTE',
+          key: 'createQuote',
+          url: '/quote/create',
         },
       ],
     },

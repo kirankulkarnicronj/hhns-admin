@@ -5,8 +5,9 @@ import settings from './settings/sagas'
 import blog from './blog/saga'
 import lecture from './lecture/saga'
 import gallery from './gallery/saga'
+import quote from './quote/saga'
 import galleryList from './galleryListing/saga'
 
 export default function* rootSaga() {
-  yield all([user(), menu(), settings(), blog(), lecture(), gallery(), galleryList()])
+  yield all([user(), menu(), settings(), blog(), lecture(), gallery(), quote(), galleryList()])
 }

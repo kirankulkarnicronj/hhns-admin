@@ -264,6 +264,18 @@ const routes = [
     exact: true,
   },
 
+  {
+    path: '/quote/create',
+    component: loadable(() => import('pages/quote/addquote')),
+    exact: true,
+  },
+
+  {
+    path: '/quote/list',
+    component: loadable(() => import('pages/quote/list')),
+    exact: true,
+  },
+
   // YouTube
   // {
   //   path: '/youtube/feed',
