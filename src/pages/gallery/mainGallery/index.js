@@ -68,11 +68,8 @@ class MainGallery extends React.Component {
         const body = {
           uuid: this.uuidv4(),
           date: new Date().toLocaleDateString(),
-        }
-        if (language) {
-          body.name_en = name
-        } else {
-          body.name_ru = name
+          name_en: language ? name : '',
+          name_ru: language ? '' : name,
         }
         dispatch({
           type: 'galleryListing/CREATE_MAIN_GALLERY',
