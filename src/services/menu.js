@@ -305,6 +305,22 @@ export async function getLeftMenuData() {
         },
       ],
     },
+    {
+      title: 'KIRTAN',
+      key: 'kirtan',
+      children: [
+        {
+          title: 'LIST',
+          key: 'KirtanList',
+          url: '/kirtan/list',
+        },
+        {
+          title: 'CREATE KIRTAN',
+          key: 'createKirtan',
+          url: '/kirtan/create',
+        },
+      ],
+    },
     // {
     //   title: 'YouTube',
     //   key: 'youtube',
@@ -661,6 +677,22 @@ export async function getTopMenuData() {
           title: 'CREATE IMAGE COLLECTION',
           key: 'createImageCollection',
           url: '/gallery/create',
+        },
+      ],
+    },
+    {
+      title: 'KIRTAN',
+      key: 'kirtan',
+      children: [
+        {
+          title: 'LIST',
+          key: 'KirtanList',
+          url: '/kirtan/list',
+        },
+        {
+          title: 'CREATE KIRTAN',
+          key: 'createKirtan',
+          url: '/kirtan/create',
         },
       ],
     },

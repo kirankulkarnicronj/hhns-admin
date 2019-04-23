@@ -443,10 +443,7 @@ class CreateGallery extends React.Component {
                       {mainGallery && mainGallery.length > 0
                         ? mainGallery.map(item => {
                             return (
-                              <Option
-                                key={item.uuid}
-                                value={language ? item.name_en : item.name_ru}
-                              >
+                              <Option key={item.uuid} value={item.name_en}>
                                 {language ? item.name_en : item.name_ru}
                               </Option>
                             )

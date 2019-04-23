@@ -276,6 +276,20 @@ const routes = [
     exact: true,
   },
 
+  // kirtan
+
+  {
+    path: '/kirtan/list',
+    component: loadable(() => import('pages/Kirtan/list')),
+    exact: true,
+  },
+
+  {
+    path: '/kirtan/create',
+    component: loadable(() => import('pages/Kirtan/add-kirtan')),
+    exact: true,
+  },
+
   // YouTube
   // {
   //   path: '/youtube/feed',

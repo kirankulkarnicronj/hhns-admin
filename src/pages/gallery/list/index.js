@@ -147,7 +147,7 @@ class GalleryList extends React.Component {
                 {mainGallery && mainGallery.length > 0
                   ? mainGallery.map(item => {
                       return (
-                        <Option value={language ? item.name_en : item.name_ru}>
+                        <Option value={item.name_en}>
                           {language ? item.name_en : item.name_ru}
                         </Option>
                       )

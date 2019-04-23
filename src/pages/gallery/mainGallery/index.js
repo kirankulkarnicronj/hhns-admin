@@ -91,10 +91,16 @@ class MainGallery extends React.Component {
     form.resetFields()
   }
 
+  sortNumber = (a, b) => {
+    return a - b
+  }
+
   render() {
     const { form, galleryList } = this.props
     const { mainGallery, totalmainGallery } = galleryList
     const { language } = this.state
+    const mainGallery1 = mainGallery.sort(this.sortNumber)
+    console.log('mainGallery1======>>>>', mainGallery1)
 
     const columns = [
       {
@@ -175,7 +181,7 @@ class MainGallery extends React.Component {
                 className="utils__scrollTable"
                 scroll={{ x: '100%' }}
                 columns={columns}
-                dataSource={mainGallery}
+                dataSource={mainGallery1}
                 pagination={{
                   pageSize: 5,
                   total: totalmainGallery,
